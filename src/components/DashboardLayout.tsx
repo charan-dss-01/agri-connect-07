@@ -1,9 +1,10 @@
 import React, { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Leaf, LogOut, Bell, Home, BarChart3, Users, Factory, Wheat, Menu, X } from 'lucide-react';
+import { Leaf, LogOut, Home, BarChart3, Users, Factory, Wheat, Menu } from 'lucide-react';
 import { useState } from 'react';
-import { sampleNotifications } from '@/data/mockData';
+import NotificationPanel from '@/components/NotificationPanel';
+import DemoToggle from '@/components/DemoToggle';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -13,8 +14,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const unreadCount = sampleNotifications.filter(n => n.userId === user?.id && !n.read).length;
 
   const handleLogout = () => {
     logout();
@@ -40,12 +39,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-30 bg-foreground/20 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={`fixed md:static z-40 h-full w-64 gradient-hero flex flex-col transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="flex items-center gap-2.5 px-5 py-5 border-b border-sidebar-border">
           <div className="w-9 h-9 rounded-lg bg-sidebar-primary flex items-center justify-center">
@@ -82,7 +79,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </div>
       </aside>
 
-      {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="flex items-center justify-between px-4 md:px-8 py-4 border-b border-border bg-card">
           <div className="flex items-center gap-3">
@@ -95,14 +91,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
-              <Bell className="w-4.5 h-4.5 text-muted-foreground" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-accent text-accent-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
+            <DemoToggle />
+            <NotificationPanel />
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
               {user?.name?.charAt(0)}
             </div>

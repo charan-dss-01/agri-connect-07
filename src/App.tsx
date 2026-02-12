@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { DemoProvider } from "@/contexts/DemoContext";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import FarmerDashboard from "./pages/FarmerDashboard";
@@ -19,19 +20,21 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/farmer" element={<FarmerDashboard />} />
-            <Route path="/farmer/*" element={<FarmerDashboard />} />
-            <Route path="/industry" element={<IndustryDashboard />} />
-            <Route path="/industry/*" element={<IndustryDashboard />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/*" element={<AdminDashboard />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <DemoProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/farmer" element={<FarmerDashboard />} />
+              <Route path="/farmer/*" element={<FarmerDashboard />} />
+              <Route path="/industry" element={<IndustryDashboard />} />
+              <Route path="/industry/*" element={<IndustryDashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/*" element={<AdminDashboard />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </DemoProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
