@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
-import { Leaf, Eye, EyeOff } from 'lucide-react';
+import { Leaf, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -10,18 +11,42 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [village, setVillage] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isRegister) {
-      register({ name, email, password, role });
-    } else {
-      login(email, password, role);
+    setSubmitting(true);
+    try {
+      if (isRegister) {
+        const res = await register({ name, email, password, role, phone, village, companyName });
+        if (res.error) {
+          toast({ title: 'Registration failed', description: res.error, variant: 'destructive' });
+          setSubmitting(false);
+          return;
+        }
+        toast({ title: 'Account created!', description: 'You are now logged in.' });
+      } else {
+        const res = await login(email, password);
+        if (res.error) {
+          toast({ title: 'Login failed', description: res.error, variant: 'destructive' });
+          setSubmitting(false);
+          return;
+        }
+      }
+      // Small delay to let auth state propagate
+      setTimeout(() => {
+        navigate(role === 'farmer' ? '/farmer' : role === 'industry' ? '/industry' : '/admin');
+        setSubmitting(false);
+      }, 500);
+    } catch {
+      setSubmitting(false);
     }
-    navigate(role === 'farmer' ? '/farmer' : role === 'industry' ? '/industry' : '/admin');
   };
 
   const roles: { value: UserRole; label: string }[] = [
@@ -66,34 +91,74 @@ const Login = () => {
           </p>
 
           {/* Role selector */}
-          <div className="flex gap-2 mb-6">
-            {roles.map(r => (
-              <button
-                key={r.value}
-                onClick={() => setRole(r.value)}
-                className={`flex-1 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                  role === r.value
-                    ? 'bg-primary text-primary-foreground shadow-card'
-                    : 'bg-muted text-muted-foreground hover:bg-secondary'
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
+          {isRegister && (
+            <div className="flex gap-2 mb-6">
+              {roles.filter(r => r.value !== 'admin').map(r => (
+                <button
+                  key={r.value}
+                  onClick={() => setRole(r.value)}
+                  className={`flex-1 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                    role === r.value
+                      ? 'bg-primary text-primary-foreground shadow-card'
+                      : 'bg-muted text-muted-foreground hover:bg-secondary'
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {isRegister && (
-              <div>
-                <label className="text-xs font-medium text-foreground mb-1.5 block">Full Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Enter your name"
-                />
-              </div>
+              <>
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1.5 block">Full Name</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="Enter your name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1.5 block">Phone</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="+91 98765 43210"
+                  />
+                </div>
+                {role === 'farmer' && (
+                  <div>
+                    <label className="text-xs font-medium text-foreground mb-1.5 block">Village</label>
+                    <input
+                      type="text"
+                      value={village}
+                      onChange={e => setVillage(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="e.g. Karnal, Haryana"
+                    />
+                  </div>
+                )}
+                {role === 'industry' && (
+                  <div>
+                    <label className="text-xs font-medium text-foreground mb-1.5 block">Company Name</label>
+                    <input
+                      type="text"
+                      value={companyName}
+                      onChange={e => setCompanyName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="e.g. GreenPower Biomass Ltd"
+                      required
+                    />
+                  </div>
+                )}
+              </>
             )}
             <div>
               <label className="text-xs font-medium text-foreground mb-1.5 block">Email</label>
@@ -103,6 +168,7 @@ const Login = () => {
                 onChange={e => setEmail(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="you@example.com"
+                required
               />
             </div>
             <div>
@@ -114,6 +180,8 @@ const Login = () => {
                   onChange={e => setPassword(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring pr-10"
                   placeholder="••••••••"
+                  required
+                  minLength={6}
                 />
                 <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -122,8 +190,10 @@ const Login = () => {
             </div>
             <button
               type="submit"
-              className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-card"
+              disabled={submitting}
+              className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-card disabled:opacity-50 flex items-center justify-center gap-2"
             >
+              {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
               {isRegister ? 'Create Account' : 'Sign In'}
             </button>
           </form>
@@ -134,13 +204,6 @@ const Login = () => {
               {isRegister ? 'Sign In' : 'Register'}
             </button>
           </p>
-
-          {/* Demo hint */}
-          <div className="mt-6 p-3 rounded-lg bg-muted text-center">
-            <p className="text-xs text-muted-foreground">
-              <strong>Demo:</strong> Select any role and click Sign In — no real credentials needed
-            </p>
-          </div>
         </div>
       </div>
     </div>

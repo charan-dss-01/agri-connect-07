@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { sampleTransactions } from '@/data/mockData';
-import { Factory, Wheat, CheckCircle, XCircle, Clock, Calendar, IndianRupee } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Factory, Wheat, CheckCircle, XCircle, Clock, Calendar, IndianRupee, Loader2 } from 'lucide-react';
 import TransactionTimeline from '@/components/TransactionTimeline';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from '@/hooks/use-toast';
@@ -21,31 +22,74 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 const IndustryDashboard = () => {
-  const [transactions, setTransactions] = useState(sampleTransactions);
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [pickupDates, setPickupDates] = useState<Record<string, string>>({});
   const [expandedTx, setExpandedTx] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ id: string; type: 'accept' | 'reject' | 'complete' } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchTransactions = useCallback(async () => {
+    if (!user?.id) return;
+    const { data } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('industry_id', user.id)
+      .order('created_at', { ascending: false });
+    setTransactions(data || []);
+    setLoading(false);
+  }, [user?.id]);
+
+  useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
 
   const pendingRequests = transactions.filter(t => t.status === 'pending');
   const completedCount = transactions.filter(t => t.status === 'completed').length;
-  const totalBiomass = transactions.filter(t => t.status === 'completed').reduce((s, t) => s + t.quantity, 0);
-  const totalSpent = transactions.filter(t => t.status === 'completed').reduce((s, t) => s + t.totalValue, 0);
+  const totalBiomass = transactions.filter(t => t.status === 'completed').reduce((s, t) => s + Number(t.quantity), 0);
+  const totalSpent = transactions.filter(t => t.status === 'completed').reduce((s, t) => s + Number(t.total_value), 0);
 
-  const doAction = () => {
+  const doAction = async () => {
     if (!confirmAction) return;
     const { id, type } = confirmAction;
+
     if (type === 'accept') {
-      setTransactions(prev => prev.map(t => t.id === id ? { ...t, status: 'accepted' as const, pickupDate: pickupDates[id] || '2026-02-20' } : t));
-      toast({ title: "Request Accepted", description: "Pickup has been scheduled." });
+      const pickupDate = pickupDates[id] || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+      const { error } = await supabase.from('transactions').update({ status: 'accepted', pickup_date: pickupDate }).eq('id', id);
+      if (!error) {
+        toast({ title: 'Request Accepted', description: 'Pickup has been scheduled.' });
+        const tx = transactions.find(t => t.id === id);
+        if (tx) {
+          await supabase.from('notifications').insert({ user_id: tx.farmer_id, message: `Your sell request has been accepted! Pickup: ${pickupDate}`, type: 'success' });
+          // Update listing status
+          if (tx.listing_id) await supabase.from('residue_listings').update({ status: 'pending' }).eq('id', tx.listing_id);
+        }
+      }
     } else if (type === 'reject') {
-      setTransactions(prev => prev.map(t => t.id === id ? { ...t, status: 'rejected' as const } : t));
-      toast({ title: "Request Rejected", variant: "destructive" });
+      const { error } = await supabase.from('transactions').update({ status: 'rejected' }).eq('id', id);
+      if (!error) {
+        toast({ title: 'Request Rejected', variant: 'destructive' });
+        const tx = transactions.find(t => t.id === id);
+        if (tx) await supabase.from('notifications').insert({ user_id: tx.farmer_id, message: 'Your sell request was rejected.', type: 'warning' });
+      }
     } else {
-      setTransactions(prev => prev.map(t => t.id === id ? { ...t, status: 'completed' as const } : t));
-      toast({ title: "Transaction Completed!", description: "Biomass has been received." });
+      const tx = transactions.find(t => t.id === id);
+      const carbonSaved = tx ? Number(tx.quantity) * 1500 : 0;
+      const creditPoints = tx ? Number(tx.quantity) * 10 : 0;
+      const { error } = await supabase.from('transactions').update({ status: 'completed', carbon_saved: carbonSaved, credit_points: creditPoints }).eq('id', id);
+      if (!error) {
+        toast({ title: 'Transaction Completed!', description: 'Biomass has been received.' });
+        if (tx) {
+          await supabase.from('notifications').insert({ user_id: tx.farmer_id, message: `Transaction completed! ${Number(tx.quantity)}t biomass received. Carbon credits: ${creditPoints}`, type: 'success' });
+          if (tx.listing_id) await supabase.from('residue_listings').update({ status: 'completed' }).eq('id', tx.listing_id);
+        }
+      }
     }
     setConfirmAction(null);
+    fetchTransactions();
   };
+
+  if (loading) {
+    return <DashboardLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></DashboardLayout>;
+  }
 
   return (
     <DashboardLayout>
@@ -83,22 +127,22 @@ const IndustryDashboard = () => {
                   <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium">{t.farmerName}</p>
+                        <p className="font-medium">{t.crop_type} — {Number(t.quantity)} tons</p>
                         <StatusBadge status={t.status} />
-                        {t.clusterEligible && (
+                        {t.cluster_eligible && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success font-medium">Cluster</span>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {t.cropType} • {t.quantity} tons • ₹{t.pricePerTon}/ton • {t.distance} km away
+                        ₹{Number(t.price_per_ton)}/ton • {Number(t.transport_distance || 0)} km away
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Total: ₹{t.totalValue.toLocaleString()} • Transport: ₹{t.transportCost.toLocaleString()}
-                        {t.transportSavings ? <span className="text-success"> (saved ₹{t.transportSavings.toLocaleString()})</span> : null}
+                        Total: ₹{Number(t.total_value).toLocaleString()} • Transport: ₹{Number(t.transport_cost || 0).toLocaleString()}
+                        {Number(t.transport_savings) > 0 && <span className="text-success"> (saved ₹{Number(t.transport_savings).toLocaleString()})</span>}
                       </p>
-                      {t.pickupDate && (
+                      {t.pickup_date && (
                         <p className="text-xs text-info mt-1 flex items-center gap-1">
-                          <Calendar className="w-3 h-3" /> Pickup: {t.pickupDate}
+                          <Calendar className="w-3 h-3" /> Pickup: {t.pickup_date}
                         </p>
                       )}
                     </div>
@@ -127,13 +171,19 @@ const IndustryDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Timeline toggle */}
                   <button onClick={() => setExpandedTx(expandedTx === t.id ? null : t.id)} className="text-[10px] text-primary mt-2 hover:underline">
                     {expandedTx === t.id ? 'Hide' : 'Show'} Timeline
                   </button>
                   {expandedTx === t.id && (
                     <div className="mt-2 pt-2 border-t border-border">
-                      <TransactionTimeline transaction={t} />
+                      <TransactionTimeline transaction={{
+                        id: t.id, farmerId: t.farmer_id, farmerName: '', industryId: t.industry_id, industryName: '',
+                        cropType: t.crop_type, quantity: Number(t.quantity), pricePerTon: Number(t.price_per_ton),
+                        totalValue: Number(t.total_value), transportCost: Number(t.transport_cost || 0),
+                        netProfit: Number(t.net_profit || 0), distance: Number(t.transport_distance || 0),
+                        status: t.status, createdAt: t.created_at, pickupDate: t.pickup_date,
+                        clusterEligible: t.cluster_eligible, transportSavings: Number(t.transport_savings || 0),
+                      }} />
                     </div>
                   )}
                 </div>
