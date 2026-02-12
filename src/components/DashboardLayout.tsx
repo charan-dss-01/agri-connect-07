@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Leaf, LogOut, Home, BarChart3, Users, Factory, Wheat, Menu } from 'lucide-react';
 import { useState } from 'react';
 import NotificationPanel from '@/components/NotificationPanel';
@@ -14,6 +14,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
 
   const handleLogout = async () => {
     await logout();
@@ -60,7 +61,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               key={item.path}
               to={item.path}
               onClick={() => setSidebarOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors text-sm"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm ${
+                location.pathname === item.path
+                  ? 'bg-sidebar-accent text-sidebar-foreground font-medium'
+                  : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent'
+              }`}
             >
               <item.icon className="w-4 h-4" />
               {item.label}
