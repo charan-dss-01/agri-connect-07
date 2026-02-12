@@ -45,18 +45,21 @@ const FarmerDashboard = () => {
 
   // Real data
   const [myTransactions, setMyTransactions] = useState<any[]>([]);
+  const [myListings, setMyListings] = useState<any[]>([]);
   const [industries, setIndustries] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!user?.id) return;
-    const [txRes, indRes] = await Promise.all([
+    const [txRes, indRes, listRes] = await Promise.all([
       supabase.from('transactions').select('*').eq('farmer_id', user.id).order('created_at', { ascending: false }),
       supabase.from('industry_profiles').select('*'),
+      supabase.from('residue_listings').select('*').eq('farmer_id', user.id).order('created_at', { ascending: false }),
     ]);
     setMyTransactions(txRes.data || []);
     setIndustries(indRes.data || []);
+    setMyListings(listRes.data || []);
     setLoadingData(false);
   }, [user?.id]);
 
@@ -241,7 +244,14 @@ const FarmerDashboard = () => {
                 <AIAnalysisPanel
                   cropType={cropType}
                   trigger={aiTrigger}
-                  onAnalysisComplete={(res) => { setAdjustedPrice(res.adjustedPrice); setAiResult(res); }}
+                  imageFile={imageFile}
+                  onAnalysisComplete={(res) => {
+                    setAdjustedPrice(res.adjustedPrice);
+                    setAiResult(res);
+                    if (res.detectedCropType && res.detectedCropType !== cropType) {
+                      setCropType(res.detectedCropType);
+                    }
+                  }}
                 />
 
                 <div className="grid grid-cols-2 gap-4">
@@ -340,7 +350,45 @@ const FarmerDashboard = () => {
           </div>
         )}
 
-        {/* My Requests with Timeline */}
+        {/* My Listings */}
+        <div className="bg-card rounded-xl p-6 shadow-card">
+          <h3 className="font-semibold text-lg mb-4">My Listings ({myListings.length})</h3>
+          {myListings.length === 0 ? (
+            <div className="text-center py-8">
+              <Wheat className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No listings yet. Click "List Residue" to create one.</p>
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {myListings.map(l => (
+                <div key={l.id} className="border border-border rounded-lg p-4 animate-fade-in">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-medium text-sm">{l.crop_type} — {Number(l.quantity)} tons</p>
+                      <p className="text-xs text-muted-foreground">₹{Number(l.adjusted_price_per_ton)}/ton • Total: ₹{Number(l.total_value).toLocaleString()}</p>
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                      l.status === 'available' ? 'bg-success/15 text-success' :
+                      l.status === 'pending' ? 'bg-warning/15 text-warning' :
+                      l.status === 'completed' ? 'bg-info/15 text-info' :
+                      'bg-muted text-muted-foreground'
+                    }`}>{l.status}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    {l.quality_grade && <span>Grade {l.quality_grade}</span>}
+                    {l.moisture_level && <span>💧 {Number(l.moisture_level)}%</span>}
+                    {l.ai_confidence && <span>🤖 {Number(l.ai_confidence)}%</span>}
+                    <span>{new Date(l.created_at).toLocaleDateString()}</span>
+                  </div>
+                  {l.image_url && (
+                    <img src={l.image_url} alt="Crop" className="w-full h-24 object-cover rounded-lg mt-2" />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="bg-card rounded-xl p-6 shadow-card">
           <h3 className="font-semibold text-lg mb-4">My Requests</h3>
           {myTransactions.length === 0 ? (
