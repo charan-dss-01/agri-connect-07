@@ -6,9 +6,10 @@ import {
   CROP_PRICES, TRANSPORT_RATE, calculateDistance,
   CLUSTER_RADIUS_KM, CLUSTER_DISCOUNT
 } from '@/data/mockData';
-import { Wheat, MapPin, Send, CheckCircle, Upload, Users, Loader2 } from 'lucide-react';
+import { Wheat, Send, CheckCircle, Upload, Users, Loader2 } from 'lucide-react';
 import AIAnalysisPanel from '@/components/AIAnalysisPanel';
 import ClusterSavings from '@/components/ClusterSavings';
+import LocationPicker from '@/components/LocationPicker';
 import { toast } from '@/hooks/use-toast';
 
 const FarmerListResidue = () => {
@@ -27,6 +28,8 @@ const FarmerListResidue = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [locationAddress, setLocationAddress] = useState(user?.location?.address || '');
+  const [locationLat, setLocationLat] = useState<number | undefined>(user?.location?.lat);
+  const [locationLng, setLocationLng] = useState<number | undefined>(user?.location?.lng);
 
   const fetchData = useCallback(async () => {
     if (!user?.id) return;
@@ -82,8 +85,8 @@ const FarmerListResidue = () => {
       base_price_per_ton: basePrice,
       adjusted_price_per_ton: pricePerTon,
       total_value: totalValue,
-      lat: user.location?.lat || null,
-      lng: user.location?.lng || null,
+      lat: locationLat || user.location?.lat || null,
+      lng: locationLng || user.location?.lng || null,
       address: locationAddress || user.location?.address || null,
       image_url: imageUrl,
       status: 'available',
@@ -217,15 +220,17 @@ const FarmerListResidue = () => {
                   <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm" placeholder="e.g. 10" />
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-medium mb-1 block">Location</label>
-                <div className="flex items-center gap-2">
-                  <input type="text" value={locationAddress} onChange={e => setLocationAddress(e.target.value)} className="flex-1 px-3 py-2 rounded-lg border border-input bg-background text-sm" placeholder="Enter your address" />
-                  <button className="px-3 py-2 rounded-lg bg-muted text-xs font-medium flex items-center gap-1 hover:bg-secondary transition-colors">
-                    <MapPin className="w-3 h-3" /> Auto-detect
-                  </button>
-                </div>
-              </div>
+              <LocationPicker
+                lat={locationLat}
+                lng={locationLng}
+                address={locationAddress}
+                onLocationChange={(newLat, newLng, newAddr) => {
+                  setLocationLat(newLat);
+                  setLocationLng(newLng);
+                  setLocationAddress(newAddr);
+                }}
+                compact
+              />
 
               {qty > 0 && (
                 <div className="bg-muted rounded-lg p-4 space-y-2">
