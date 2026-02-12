@@ -15,8 +15,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -87,14 +87,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </button>
             <div>
               <p className="text-xs text-muted-foreground">Welcome back,</p>
-              <p className="font-semibold text-sm">{user?.name}</p>
+              <p className="font-semibold text-sm">{user?.name || user?.email}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <DemoToggle />
             <NotificationPanel />
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-              {user?.name?.charAt(0)}
+              {(user?.name || user?.email || '?').charAt(0).toUpperCase()}
             </div>
           </div>
         </header>

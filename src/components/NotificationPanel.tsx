@@ -1,21 +1,65 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, X, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDemo } from '@/contexts/DemoContext';
-import { sampleNotifications } from '@/data/mockData';
+import { supabase } from '@/integrations/supabase/client';
+
+interface NotificationItem {
+  id: string;
+  message: string;
+  read: boolean;
+  type: string;
+  created_at: string;
+}
 
 export default function NotificationPanel() {
   const { user } = useAuth();
-  const { demoMode, liveNotifications } = useDemo();
   const [open, setOpen] = useState(false);
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
-  const allNotifications = demoMode ? liveNotifications : sampleNotifications;
-  const myNotifications = allNotifications.filter(n => n.userId === user?.id);
-  const unreadCount = myNotifications.filter(n => !n.read && !readIds.has(n.id)).length;
+  useEffect(() => {
+    if (!user?.id) return;
 
-  const markRead = (id: string) => setReadIds(p => new Set(p).add(id));
-  const markAllRead = () => setReadIds(new Set(myNotifications.map(n => n.id)));
+    const fetchNotifications = async () => {
+      const { data } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      setNotifications(data || []);
+    };
+
+    fetchNotifications();
+
+    // Subscribe to realtime notifications
+    const channel = supabase
+      .channel('notifications')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`,
+      }, (payload) => {
+        setNotifications(prev => [payload.new as NotificationItem, ...prev].slice(0, 20));
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markRead = async (id: string) => {
+    await supabase.from('notifications').update({ read: true }).eq('id', id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const markAllRead = async () => {
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+    if (unreadIds.length === 0) return;
+    await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
 
   return (
     <div className="relative">
@@ -44,28 +88,25 @@ export default function NotificationPanel() {
               </div>
             </div>
             <div className="max-h-72 overflow-y-auto">
-              {myNotifications.length === 0 ? (
+              {notifications.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">No notifications</p>
               ) : (
-                myNotifications.map(n => {
-                  const isRead = n.read || readIds.has(n.id);
-                  return (
-                    <div key={n.id} className={`px-4 py-3 border-b border-border/50 flex items-start gap-3 ${!isRead ? 'bg-primary/5' : ''}`}>
-                      <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-                        n.type === 'success' ? 'bg-success' : n.type === 'warning' ? 'bg-warning' : 'bg-info'
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs leading-relaxed">{n.message}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{n.createdAt}</p>
-                      </div>
-                      {!isRead && (
-                        <button onClick={() => markRead(n.id)} className="shrink-0 p-1 hover:bg-muted rounded">
-                          <Check className="w-3 h-3 text-muted-foreground" />
-                        </button>
-                      )}
+                notifications.map(n => (
+                  <div key={n.id} className={`px-4 py-3 border-b border-border/50 flex items-start gap-3 ${!n.read ? 'bg-primary/5' : ''}`}>
+                    <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                      n.type === 'success' ? 'bg-success' : n.type === 'warning' ? 'bg-warning' : 'bg-info'
+                    }`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs leading-relaxed">{n.message}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(n.created_at).toLocaleDateString()}</p>
                     </div>
-                  );
-                })
+                    {!n.read && (
+                      <button onClick={() => markRead(n.id)} className="shrink-0 p-1 hover:bg-muted rounded">
+                        <Check className="w-3 h-3 text-muted-foreground" />
+                      </button>
+                    )}
+                  </div>
+                ))
               )}
             </div>
           </div>
