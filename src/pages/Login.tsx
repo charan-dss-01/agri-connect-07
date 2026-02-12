@@ -39,9 +39,20 @@ const Login = () => {
           return;
         }
       }
-      // Small delay to let auth state propagate
-      setTimeout(() => {
-        navigate(role === 'farmer' ? '/farmer' : role === 'industry' ? '/industry' : '/admin');
+      // Small delay to let auth state propagate, then redirect based on actual user role
+      setTimeout(async () => {
+        const { data: { session } } = await (await import('@/integrations/supabase/client')).supabase.auth.getSession();
+        if (session?.user) {
+          const { data: roleData } = await (await import('@/integrations/supabase/client')).supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          const actualRole = roleData?.role || role;
+          navigate(actualRole === 'farmer' ? '/farmer' : actualRole === 'industry' ? '/industry' : '/admin');
+        } else {
+          navigate(role === 'farmer' ? '/farmer' : role === 'industry' ? '/industry' : '/admin');
+        }
         setSubmitting(false);
       }, 500);
     } catch {

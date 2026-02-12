@@ -12,6 +12,7 @@ import FarmerListResidue from "./pages/FarmerListResidue";
 import FarmerRequests from "./pages/FarmerRequests";
 import IndustryDashboard from "./pages/IndustryDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import ProfileSettings from "./pages/ProfileSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,9 +33,12 @@ const AppRoutes = () => (
       <Route path="/farmer" element={<ProtectedRoute allowedRole="farmer"><FarmerDashboard /></ProtectedRoute>} />
       <Route path="/farmer/list" element={<ProtectedRoute allowedRole="farmer"><FarmerListResidue /></ProtectedRoute>} />
       <Route path="/farmer/requests" element={<ProtectedRoute allowedRole="farmer"><FarmerRequests /></ProtectedRoute>} />
+      <Route path="/farmer/settings" element={<ProtectedRoute allowedRole="farmer"><ProfileSettings /></ProtectedRoute>} />
       <Route path="/industry" element={<ProtectedRoute allowedRole="industry"><IndustryDashboard /></ProtectedRoute>} />
+      <Route path="/industry/settings" element={<ProtectedRoute allowedRole="industry"><ProfileSettings /></ProtectedRoute>} />
       <Route path="/industry/*" element={<ProtectedRoute allowedRole="industry"><IndustryDashboard /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/settings" element={<ProtectedRoute allowedRole="admin"><ProfileSettings /></ProtectedRoute>} />
       <Route path="/admin/*" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
