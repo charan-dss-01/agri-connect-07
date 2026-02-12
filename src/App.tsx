@@ -8,6 +8,8 @@ import { DemoProvider } from "@/contexts/DemoContext";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import FarmerDashboard from "./pages/FarmerDashboard";
+import FarmerListResidue from "./pages/FarmerListResidue";
+import FarmerRequests from "./pages/FarmerRequests";
 import IndustryDashboard from "./pages/IndustryDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -28,7 +30,8 @@ const AppRoutes = () => (
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/farmer" element={<ProtectedRoute allowedRole="farmer"><FarmerDashboard /></ProtectedRoute>} />
-      <Route path="/farmer/*" element={<ProtectedRoute allowedRole="farmer"><FarmerDashboard /></ProtectedRoute>} />
+      <Route path="/farmer/list" element={<ProtectedRoute allowedRole="farmer"><FarmerListResidue /></ProtectedRoute>} />
+      <Route path="/farmer/requests" element={<ProtectedRoute allowedRole="farmer"><FarmerRequests /></ProtectedRoute>} />
       <Route path="/industry" element={<ProtectedRoute allowedRole="industry"><IndustryDashboard /></ProtectedRoute>} />
       <Route path="/industry/*" element={<ProtectedRoute allowedRole="industry"><IndustryDashboard /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
