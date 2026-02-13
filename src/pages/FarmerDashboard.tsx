@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { CARBON_FACTOR } from '@/data/mockData';
+// Real carbon data comes from completed transactions
 import { Wheat, IndianRupee, Truck, Leaf, Loader2 } from 'lucide-react';
 import CarbonCreditsCard from '@/components/CarbonCreditsCard';
 import { useNavigate } from 'react-router-dom';
@@ -27,9 +27,10 @@ const FarmerDashboard = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const totalEarnings = myTransactions.filter(t => t.status === 'completed').reduce((s, t) => s + (Number(t.net_profit) || 0), 0);
+  const completedTx = myTransactions.filter(t => t.status === 'completed');
+  const totalEarnings = completedTx.reduce((s, t) => s + (Number(t.net_profit) || 0), 0);
   const totalBiomass = myTransactions.reduce((s, t) => s + (Number(t.quantity) || 0), 0);
-  const carbonSaved = totalBiomass * CARBON_FACTOR;
+  const carbonSaved = completedTx.reduce((s, t) => s + (Number(t.carbon_saved) || 0), 0) / 1000; // kg to tons
 
   if (loadingData) {
     return (

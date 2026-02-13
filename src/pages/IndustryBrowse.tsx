@@ -33,7 +33,7 @@ const IndustryBrowse = () => {
 
     const dist = (industryProfile.lat && industryProfile.lng && listing.lat && listing.lng)
       ? calculateDistance(Number(industryProfile.lat), Number(industryProfile.lng), Number(listing.lat), Number(listing.lng))
-      : Math.floor(Math.random() * 50 + 10);
+      : 0;
 
     const qty = Number(listing.quantity);
     const baseCost = dist * TRANSPORT_RATE * qty;

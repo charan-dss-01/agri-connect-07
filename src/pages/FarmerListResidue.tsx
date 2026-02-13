@@ -49,9 +49,9 @@ const FarmerListResidue = () => {
   const totalValue = qty * pricePerTon;
 
   const nearbyIndustries = industries.map(ind => {
-    const dist = user?.location && ind.lat && ind.lng
-      ? calculateDistance(user.location.lat, user.location.lng, Number(ind.lat), Number(ind.lng))
-      : Math.floor(Math.random() * 50 + 10);
+    const dist = (locationLat || user?.location?.lat) && (locationLng || user?.location?.lng) && ind.lat && ind.lng
+      ? calculateDistance(locationLat || user!.location!.lat, locationLng || user!.location!.lng, Number(ind.lat), Number(ind.lng))
+      : 0;
     const baseCost = dist * TRANSPORT_RATE * qty;
     const isCluster = dist <= CLUSTER_RADIUS_KM;
     const transportCost = isCluster ? baseCost * (1 - CLUSTER_DISCOUNT) : baseCost;

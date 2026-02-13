@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Leaf, ArrowRight, Factory, Wheat, BarChart3, Sprout, Recycle, TrendingUp } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const features = [
   { icon: Wheat, title: 'Farmers', desc: 'List crop residue and connect with buyers instantly' },
@@ -7,14 +9,37 @@ const features = [
   { icon: BarChart3, title: 'Analytics', desc: 'Track impact with real-time pollution reduction data' },
 ];
 
-const stats = [
-  { value: '2,400+', label: 'Farmers Registered', icon: Sprout },
-  { value: '180+', label: 'Industries Connected', icon: Factory },
-  { value: '15,000', label: 'Tons Biomass Traded', icon: Recycle },
-  { value: '22,500', label: 'Tons CO₂ Saved', icon: TrendingUp },
-];
-
 const Landing = () => {
+  const [stats, setStats] = useState([
+    { value: '0', label: 'Farmers Registered', icon: Sprout },
+    { value: '0', label: 'Industries Connected', icon: Factory },
+    { value: '0', label: 'Tons Biomass Traded', icon: Recycle },
+    { value: '0', label: 'Tons CO₂ Saved', icon: TrendingUp },
+  ]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const [txRes, listingsRes] = await Promise.all([
+        supabase.from('transactions').select('quantity, carbon_saved, status'),
+        supabase.from('residue_listings').select('farmer_id'),
+      ]);
+
+      const allTx = txRes.data || [];
+      const completedTx = allTx.filter(t => t.status === 'completed');
+      const totalBiomass = completedTx.reduce((s, t) => s + Number(t.quantity), 0);
+      const totalCO2 = completedTx.reduce((s, t) => s + Number(t.carbon_saved || 0), 0);
+      const uniqueFarmers = new Set((listingsRes.data || []).map(l => l.farmer_id)).size;
+
+      setStats([
+        { value: uniqueFarmers > 0 ? `${uniqueFarmers}+` : '0', label: 'Farmers Registered', icon: Sprout },
+        { value: '0+', label: 'Industries Connected', icon: Factory },
+        { value: totalBiomass > 0 ? totalBiomass.toLocaleString() : '0', label: 'Tons Biomass Traded', icon: Recycle },
+        { value: totalCO2 > 0 ? (totalCO2 / 1000).toFixed(1) : '0', label: 'Tons CO₂ Saved', icon: TrendingUp },
+      ]);
+    };
+    fetchStats();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navbar */}

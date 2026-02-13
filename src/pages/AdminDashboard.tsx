@@ -1,15 +1,12 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
-import { CARBON_FACTOR } from '@/data/mockData';
 import { Users, Factory, BarChart3, Leaf, TrendingUp, ShieldCheck, ShieldX, Loader2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from 'recharts';
-import { useDemo } from '@/contexts/DemoContext';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import TransactionTimeline from '@/components/TransactionTimeline';
 import { toast } from '@/hooks/use-toast';
 
 const AdminDashboard = () => {
-  const { demoMode, liveStats } = useDemo();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ farmers: 0, industries: 0, transactions: 0, biomass: 0, carbonSaved: 0 });
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -32,12 +29,12 @@ const AdminDashboard = () => {
 
       const farmerCount = allRoles.filter(r => r.role === 'farmer').length;
       const industryCount = allInd.length;
-      const totalBiomass = allTx.filter(t => t.status === 'completed').reduce((s, t) => s + Number(t.quantity), 0);
-      const totalCarbonSaved = allTx.filter(t => t.status === 'completed').reduce((s, t) => s + Number(t.carbon_saved || 0), 0);
+      const completedTx = allTx.filter(t => t.status === 'completed');
+      const totalBiomass = completedTx.reduce((s, t) => s + Number(t.quantity), 0);
+      const totalCarbonSaved = completedTx.reduce((s, t) => s + Number(t.carbon_saved || 0), 0);
 
       setStats({ farmers: farmerCount, industries: industryCount, transactions: allTx.length, biomass: totalBiomass, carbonSaved: totalCarbonSaved });
 
-      // Merge profiles with roles
       const merged = allProfiles.map(p => {
         const role = allRoles.find(r => r.user_id === p.user_id);
         const ind = allInd.find(i => i.user_id === p.user_id);
@@ -50,11 +47,7 @@ const AdminDashboard = () => {
     fetchAll();
   }, []);
 
-  const totalFarmers = demoMode ? liveStats.farmers : stats.farmers;
-  const totalIndustries = demoMode ? liveStats.industries : stats.industries;
-  const totalTransactions = demoMode ? liveStats.transactions : stats.transactions;
-  const totalBiomass = demoMode ? liveStats.biomass : stats.biomass;
-  const carbonReduction = demoMode ? totalBiomass * CARBON_FACTOR : stats.carbonSaved / 1000; // kg to tons
+  const carbonReduction = stats.carbonSaved / 1000;
   const carbonGoal = 100;
   const carbonProgress = Math.min((carbonReduction / carbonGoal) * 100, 100);
 
@@ -66,14 +59,27 @@ const AdminDashboard = () => {
     }
   };
 
-  // Chart data from real transactions (simplified — group by month)
-  const barData = [
-    { month: 'Oct', biomass: 0, transactions: 0 },
-    { month: 'Nov', biomass: 0, transactions: 0 },
-    { month: 'Dec', biomass: 0, transactions: 0 },
-    { month: 'Jan', biomass: 0, transactions: 0 },
-    { month: 'Feb', biomass: demoMode ? liveStats.biomass : totalBiomass, transactions: demoMode ? liveStats.transactions : stats.transactions },
-  ];
+  // Build chart data dynamically from transactions grouped by month
+  const monthlyData = (() => {
+    const grouped: Record<string, { biomass: number; transactions: number; co2: number }> = {};
+    transactions.forEach(t => {
+      const d = new Date(t.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!grouped[key]) grouped[key] = { biomass: 0, transactions: 0, co2: 0 };
+      grouped[key].transactions++;
+      if (t.status === 'completed') {
+        grouped[key].biomass += Number(t.quantity);
+        grouped[key].co2 += Number(t.carbon_saved || 0) / 1000;
+      }
+    });
+    return Object.entries(grouped)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, v]) => {
+        const [y, m] = key.split('-');
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return { month: monthNames[parseInt(m) - 1], ...v };
+      });
+  })();
 
   const pieData = (() => {
     const counts: Record<string, number> = {};
@@ -82,13 +88,14 @@ const AdminDashboard = () => {
   })();
   const pieColors = ['hsl(142, 50%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(200, 80%, 50%)'];
 
-  const lineData = [
-    { month: 'Oct', co2: 0 },
-    { month: 'Nov', co2: 0 },
-    { month: 'Dec', co2: 0 },
-    { month: 'Jan', co2: 0 },
-    { month: 'Feb', co2: demoMode ? Math.round(carbonReduction) : Math.round(stats.carbonSaved / 1000) },
-  ];
+  // Top villages from profiles
+  const topVillages = (() => {
+    const counts: Record<string, number> = {};
+    profiles.filter(p => p.village && p.role === 'farmer').forEach(p => {
+      counts[p.village] = (counts[p.village] || 0) + 1;
+    });
+    return Object.entries(counts).sort(([,a], [,b]) => b - a).slice(0, 5);
+  })();
 
   if (loading) {
     return <DashboardLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></DashboardLayout>;
@@ -99,13 +106,12 @@ const AdminDashboard = () => {
       <div className="space-y-6">
         <h2 className="text-2xl font-bold">Admin Dashboard</h2>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
-            { icon: Users, label: 'Farmers', value: totalFarmers, color: 'text-primary' },
-            { icon: Factory, label: 'Industries', value: totalIndustries, color: 'text-info' },
-            { icon: BarChart3, label: 'Transactions', value: totalTransactions, color: 'text-warning' },
-            { icon: TrendingUp, label: 'Biomass Traded', value: `${totalBiomass}t`, color: 'text-success' },
+            { icon: Users, label: 'Farmers', value: stats.farmers, color: 'text-primary' },
+            { icon: Factory, label: 'Industries', value: stats.industries, color: 'text-info' },
+            { icon: BarChart3, label: 'Transactions', value: stats.transactions, color: 'text-warning' },
+            { icon: TrendingUp, label: 'Biomass Traded', value: `${stats.biomass}t`, color: 'text-success' },
             { icon: Leaf, label: 'CO₂ Reduced', value: `${carbonReduction.toFixed(1)}t`, color: 'text-primary' },
           ].map((s, i) => (
             <div key={i} className="bg-card rounded-xl p-4 shadow-card animate-fade-in" style={{ animationDelay: `${i * 60}ms` }}>
@@ -117,7 +123,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Carbon Progress */}
-        <div className="bg-card rounded-xl p-5 shadow-card animate-fade-in">
+        <div className="bg-card rounded-xl p-5 shadow-card">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Leaf className="w-5 h-5 text-primary" />
@@ -136,7 +142,7 @@ const AdminDashboard = () => {
           <div className="bg-card rounded-xl p-5 shadow-card">
             <h4 className="font-semibold text-sm mb-4">Monthly Biomass & Transactions</h4>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={barData}>
+              <BarChart data={monthlyData.length ? monthlyData : [{ month: 'No data', biomass: 0, transactions: 0 }]}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(80, 15%, 88%)" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
@@ -167,7 +173,7 @@ const AdminDashboard = () => {
           <div className="bg-card rounded-xl p-5 shadow-card">
             <h4 className="font-semibold text-sm mb-4">CO₂ Reduction Trend</h4>
             <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={lineData}>
+              <AreaChart data={monthlyData.length ? monthlyData : [{ month: 'No data', co2: 0 }]}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(80, 15%, 88%)" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
@@ -183,6 +189,21 @@ const AdminDashboard = () => {
             </ResponsiveContainer>
           </div>
         </div>
+
+        {/* Top Villages */}
+        {topVillages.length > 0 && (
+          <div className="bg-card rounded-xl p-6 shadow-card">
+            <h3 className="font-semibold text-lg mb-4">Top Farmer Villages</h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {topVillages.map(([village, count], i) => (
+                <div key={i} className="bg-muted rounded-lg p-3 text-center">
+                  <p className="font-medium text-sm">{village}</p>
+                  <p className="text-xs text-muted-foreground">{count} farmer{count > 1 ? 's' : ''}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Users Management */}
         <div className="bg-card rounded-xl p-6 shadow-card">
