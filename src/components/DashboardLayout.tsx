@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Leaf, LogOut, Home, BarChart3, Users, Factory, Wheat, Menu, Settings } from 'lucide-react';
+import { Leaf, LogOut, Home, BarChart3, Users, Factory, Wheat, Menu, Settings, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import NotificationPanel from '@/components/NotificationPanel';
 import DemoToggle from '@/components/DemoToggle';
@@ -31,7 +31,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     : user?.role === 'industry'
     ? [
         { icon: Home, label: 'Dashboard', path: '/industry' },
-        { icon: Factory, label: 'Requests', path: '/industry/requests' },
+        { icon: ShoppingCart, label: 'Browse Listings', path: '/industry/browse' },
+        { icon: Factory, label: 'My Requests', path: '/industry/requests' },
         { icon: Settings, label: 'Settings', path: '/industry/settings' },
       ]
     : [
