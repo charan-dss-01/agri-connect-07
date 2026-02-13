@@ -11,6 +11,8 @@ import FarmerDashboard from "./pages/FarmerDashboard";
 import FarmerListResidue from "./pages/FarmerListResidue";
 import FarmerRequests from "./pages/FarmerRequests";
 import IndustryDashboard from "./pages/IndustryDashboard";
+import IndustryBrowse from "./pages/IndustryBrowse";
+import IndustryRequests from "./pages/IndustryRequests";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProfileSettings from "./pages/ProfileSettings";
 import NotFound from "./pages/NotFound";
@@ -35,8 +37,9 @@ const AppRoutes = () => (
       <Route path="/farmer/requests" element={<ProtectedRoute allowedRole="farmer"><FarmerRequests /></ProtectedRoute>} />
       <Route path="/farmer/settings" element={<ProtectedRoute allowedRole="farmer"><ProfileSettings /></ProtectedRoute>} />
       <Route path="/industry" element={<ProtectedRoute allowedRole="industry"><IndustryDashboard /></ProtectedRoute>} />
+      <Route path="/industry/browse" element={<ProtectedRoute allowedRole="industry"><IndustryBrowse /></ProtectedRoute>} />
+      <Route path="/industry/requests" element={<ProtectedRoute allowedRole="industry"><IndustryRequests /></ProtectedRoute>} />
       <Route path="/industry/settings" element={<ProtectedRoute allowedRole="industry"><ProfileSettings /></ProtectedRoute>} />
-      <Route path="/industry/*" element={<ProtectedRoute allowedRole="industry"><IndustryDashboard /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute allowedRole="admin"><ProfileSettings /></ProtectedRoute>} />
       <Route path="/admin/*" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
