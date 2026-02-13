@@ -125,8 +125,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     if (error) return { error: error.message };
 
-    // Update profile with additional data
-    if (data.user) {
+    // The trigger handle_new_user creates profile, role, and industry_profile automatically.
+    // After signup + email confirmation, update additional fields.
+    // We store extra data in a retry loop after auth state changes.
+    if (data.user && data.session) {
+      // User is auto-confirmed or session exists — update now
       await supabase.from('profiles').update({
         phone: userData.phone || null,
         village: userData.village || null,
@@ -136,10 +139,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         address: userData.address || null,
       }).eq('user_id', data.user.id);
 
-      // Create industry profile if industry
       if (userData.role === 'industry' && userData.companyName) {
-        await supabase.from('industry_profiles').insert({
-          user_id: data.user.id,
+        await supabase.from('industry_profiles').update({
           company_name: userData.companyName,
           monthly_requirement: userData.monthlyRequirement || 0,
           price_offered_per_ton: userData.priceOfferedPerTon || 0,
@@ -147,7 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           lng: userData.lng || null,
           address: userData.address || null,
           industry_type: userData.industryType || 'Power Plant',
-        });
+        }).eq('user_id', data.user.id);
       }
     }
 

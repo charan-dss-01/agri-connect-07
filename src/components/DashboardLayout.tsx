@@ -4,7 +4,6 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Leaf, LogOut, Home, BarChart3, Users, Factory, Wheat, Menu, Settings, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import NotificationPanel from '@/components/NotificationPanel';
-import DemoToggle from '@/components/DemoToggle';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -100,7 +99,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <DemoToggle />
             <NotificationPanel />
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
               {(user?.name || user?.email || '?').charAt(0).toUpperCase()}
