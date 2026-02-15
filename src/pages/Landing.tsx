@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Leaf, ArrowRight, Factory, Wheat, BarChart3, Sprout, Recycle, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,36 +9,83 @@ const features = [
   { icon: BarChart3, title: 'Analytics', desc: 'Track impact with real-time pollution reduction data' },
 ];
 
-const Landing = () => {
-  const [stats, setStats] = useState([
-    { value: '0', label: 'Farmers Registered', icon: Sprout },
-    { value: '0', label: 'Industries Connected', icon: Factory },
-    { value: '0', label: 'Tons Biomass Traded', icon: Recycle },
-    { value: '0', label: 'Tons CO₂ Saved', icon: TrendingUp },
-  ]);
+// Animated count-up hook
+function useCountUp(target: number, duration = 1200) {
+  const [value, setValue] = useState(0);
+  const prevTarget = useRef(0);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const [txRes, listingsRes] = await Promise.all([
-        supabase.from('transactions').select('quantity, carbon_saved, status'),
-        supabase.from('residue_listings').select('farmer_id'),
-      ]);
+    if (target === prevTarget.current) return;
+    const start = prevTarget.current;
+    prevTarget.current = target;
+    const startTime = performance.now();
 
-      const allTx = txRes.data || [];
-      const completedTx = allTx.filter(t => t.status === 'completed');
-      const totalBiomass = completedTx.reduce((s, t) => s + Number(t.quantity), 0);
-      const totalCO2 = completedTx.reduce((s, t) => s + Number(t.carbon_saved || 0), 0);
-      const uniqueFarmers = new Set((listingsRes.data || []).map(l => l.farmer_id)).size;
-
-      setStats([
-        { value: uniqueFarmers > 0 ? `${uniqueFarmers}+` : '0', label: 'Farmers Registered', icon: Sprout },
-        { value: '0+', label: 'Industries Connected', icon: Factory },
-        { value: totalBiomass > 0 ? totalBiomass.toLocaleString() : '0', label: 'Tons Biomass Traded', icon: Recycle },
-        { value: totalCO2 > 0 ? (totalCO2 / 1000).toFixed(1) : '0', label: 'Tons CO₂ Saved', icon: TrendingUp },
-      ]);
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(start + (target - start) * eased));
+      if (progress < 1) requestAnimationFrame(tick);
     };
-    fetchStats();
+    requestAnimationFrame(tick);
+  }, [target, duration]);
+
+  return value;
+}
+
+interface StatData {
+  farmers: number;
+  industries: number;
+  biomass: number;
+  co2: number;
+}
+
+const Landing = () => {
+  const [raw, setRaw] = useState<StatData>({ farmers: 0, industries: 0, biomass: 0, co2: 0 });
+
+  const fetchStats = useCallback(async () => {
+    const [txRes, listingsRes, indRes] = await Promise.all([
+      supabase.from('transactions').select('quantity, carbon_saved, status'),
+      supabase.from('residue_listings').select('farmer_id'),
+      supabase.from('industry_profiles').select('id'),
+    ]);
+
+    const allTx = txRes.data || [];
+    const completedTx = allTx.filter(t => t.status === 'completed');
+    const totalBiomass = completedTx.reduce((s, t) => s + Number(t.quantity), 0);
+    const totalCO2 = completedTx.reduce((s, t) => s + Number(t.carbon_saved || 0), 0);
+    const uniqueFarmers = new Set((listingsRes.data || []).map(l => l.farmer_id)).size;
+    const industryCount = (indRes.data || []).length;
+
+    setRaw({ farmers: uniqueFarmers, industries: industryCount, biomass: totalBiomass, co2: Math.round(totalCO2 / 1000) });
   }, []);
+
+  useEffect(() => {
+    fetchStats();
+
+    // Real-time subscriptions for live updates
+    const channel = supabase
+      .channel('homepage-stats')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'residue_listings' }, () => fetchStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchStats())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchStats]);
+
+  const farmersAnimated = useCountUp(raw.farmers);
+  const industriesAnimated = useCountUp(raw.industries);
+  const biomassAnimated = useCountUp(raw.biomass);
+  const co2Animated = useCountUp(raw.co2);
+
+  const stats = [
+    { value: farmersAnimated > 0 ? `${farmersAnimated}+` : '0', label: 'Farmers Registered', icon: Sprout },
+    { value: industriesAnimated > 0 ? `${industriesAnimated}+` : '0', label: 'Industries Connected', icon: Factory },
+    { value: biomassAnimated > 0 ? biomassAnimated.toLocaleString() : '0', label: 'Tons Biomass Traded', icon: Recycle },
+    { value: co2Animated > 0 ? `${co2Animated}` : '0', label: 'Tons CO₂ Saved', icon: TrendingUp },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,14 +138,15 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Stats */}
+      {/* Stats with animated counters */}
       <section className="px-6 md:px-12 -mt-12 relative z-10">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((s, i) => (
             <div key={i} className="bg-card rounded-xl p-5 shadow-card text-center animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
               <s.icon className="w-6 h-6 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground">{s.value}</p>
+              <p className="text-2xl font-bold text-foreground tabular-nums">{s.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+              <div className="w-1 h-1 rounded-full bg-success mx-auto mt-2 animate-pulse" title="Live" />
             </div>
           ))}
         </div>
