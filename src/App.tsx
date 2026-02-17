@@ -14,6 +14,8 @@ import IndustryDashboard from "./pages/IndustryDashboard";
 import IndustryBrowse from "./pages/IndustryBrowse";
 import IndustryRequests from "./pages/IndustryRequests";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
+import AdminTransactions from "./pages/AdminTransactions";
 import ProfileSettings from "./pages/ProfileSettings";
 import NotFound from "./pages/NotFound";
 
@@ -41,8 +43,9 @@ const AppRoutes = () => (
       <Route path="/industry/requests" element={<ProtectedRoute allowedRole="industry"><IndustryRequests /></ProtectedRoute>} />
       <Route path="/industry/settings" element={<ProtectedRoute allowedRole="industry"><ProfileSettings /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/users" element={<ProtectedRoute allowedRole="admin"><AdminUsers /></ProtectedRoute>} />
+      <Route path="/admin/transactions" element={<ProtectedRoute allowedRole="admin"><AdminTransactions /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute allowedRole="admin"><ProfileSettings /></ProtectedRoute>} />
-      <Route path="/admin/*" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </BrowserRouter>
