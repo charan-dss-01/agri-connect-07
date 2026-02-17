@@ -45,20 +45,16 @@ const Landing = () => {
   const [raw, setRaw] = useState<StatData>({ farmers: 0, industries: 0, biomass: 0, co2: 0 });
 
   const fetchStats = useCallback(async () => {
-    const [txRes, listingsRes, indRes] = await Promise.all([
-      supabase.from('transactions').select('quantity, carbon_saved, status'),
-      supabase.from('residue_listings').select('farmer_id'),
-      supabase.from('industry_profiles').select('id'),
-    ]);
-
-    const allTx = txRes.data || [];
-    const completedTx = allTx.filter(t => t.status === 'completed');
-    const totalBiomass = completedTx.reduce((s, t) => s + Number(t.quantity), 0);
-    const totalCO2 = completedTx.reduce((s, t) => s + Number(t.carbon_saved || 0), 0);
-    const uniqueFarmers = new Set((listingsRes.data || []).map(l => l.farmer_id)).size;
-    const industryCount = (indRes.data || []).length;
-
-    setRaw({ farmers: uniqueFarmers, industries: industryCount, biomass: totalBiomass, co2: Math.round(totalCO2 / 1000) });
+    const { data, error } = await supabase.rpc('get_public_stats');
+    if (!error && data) {
+      const stats = typeof data === 'string' ? JSON.parse(data) : data;
+      setRaw({
+        farmers: Number(stats.farmers) || 0,
+        industries: Number(stats.industries) || 0,
+        biomass: Number(stats.biomass) || 0,
+        co2: Math.round((Number(stats.co2) || 0) / 1000),
+      });
+    }
   }, []);
 
   useEffect(() => {
