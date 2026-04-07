@@ -105,6 +105,20 @@ const FarmerListResidue = () => {
 
   const handleSendRequest = async (ind: any) => {
     if (!user?.id || !currentListingId) return;
+
+    const { data: existingRequest } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('listing_id', currentListingId)
+      .eq('industry_id', ind.user_id)
+      .in('status', ['pending', 'accepted', 'completed'])
+      .maybeSingle();
+
+    if (existingRequest) {
+      toast({ title: 'Request already sent', description: 'This industry already has an active request for the current listing.' });
+      return;
+    }
+
     const { error } = await supabase.from('transactions').insert({
       listing_id: currentListingId,
       farmer_id: user.id,

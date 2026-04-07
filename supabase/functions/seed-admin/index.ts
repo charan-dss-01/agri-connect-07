@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-seed-secret",
 };
 
 serve(async (req) => {
@@ -14,11 +14,21 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const seedSecret = Deno.env.get("SEED_ADMIN_SECRET");
+    const adminPassword = Deno.env.get("SEED_ADMIN_PASSWORD");
+    const requestSecret = req.headers.get("x-seed-secret");
+
+    if (!seedSecret || !adminPassword || requestSecret !== seedSecret) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Check if admin already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    const adminExists = existingUsers?.users?.some(u => u.email === "admin@agriconnect.com");
+    const adminExists = existingUsers?.users?.some((user) => user.email === "admin@agriconnect.com");
 
     if (adminExists) {
       return new Response(JSON.stringify({ message: "Admin already exists" }), {
@@ -26,27 +36,25 @@ serve(async (req) => {
       });
     }
 
-    // Create admin user
     const { data, error } = await supabase.auth.admin.createUser({
       email: "admin@agriconnect.com",
-      password: "admin123456",
+      password: adminPassword,
       email_confirm: true,
       user_metadata: { name: "Admin", role: "admin" },
     });
-
     if (error) throw error;
 
-    // Also ensure profile and role exist (trigger may not fire for admin.createUser)
     await supabase.from("profiles").upsert({
       user_id: data.user.id,
       name: "Admin",
       email: "admin@agriconnect.com",
     }, { onConflict: "user_id" });
 
-    await supabase.from("user_roles").upsert({
+    await supabase.from("user_roles").delete().eq("user_id", data.user.id);
+    await supabase.from("user_roles").insert({
       user_id: data.user.id,
       role: "admin",
-    }, { onConflict: "user_id" });
+    });
 
     return new Response(JSON.stringify({ message: "Admin seeded successfully", userId: data.user.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

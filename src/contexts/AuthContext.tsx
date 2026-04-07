@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { User as SupaUser, Session } from '@supabase/supabase-js';
+import type { Session, User as SupaUser } from '@supabase/supabase-js';
 
 export type UserRole = 'farmer' | 'industry' | 'admin';
 
@@ -9,6 +9,7 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  approved: boolean;
   phone?: string;
   village?: string;
   landSize?: number;
@@ -20,7 +21,22 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   login: (email: string, password: string) => Promise<{ error?: string }>;
-  register: (userData: { name: string; email: string; password: string; role: UserRole; phone?: string; village?: string; landSize?: number; companyName?: string; lat?: number; lng?: number; address?: string; industryType?: string; monthlyRequirement?: number; priceOfferedPerTon?: number }) => Promise<{ error?: string }>;
+  register: (userData: {
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    phone?: string;
+    village?: string;
+    landSize?: number;
+    companyName?: string;
+    lat?: number;
+    lng?: number;
+    address?: string;
+    industryType?: string;
+    monthlyRequirement?: number;
+    priceOfferedPerTon?: number;
+  }) => Promise<{ error?: string; requiresEmailConfirmation?: boolean }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   loading: boolean;
@@ -34,31 +50,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = async (supaUser: SupaUser): Promise<User | null> => {
-    // Fetch profile
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_id', supaUser.id)
       .maybeSingle();
 
-    // Fetch role
     const { data: roleData } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', supaUser.id)
       .maybeSingle();
 
+    if (profile?.approved === false) return null;
+
     const role = (roleData?.role as UserRole) || 'farmer';
 
-    // Fetch industry profile if industry
     let companyName: string | undefined;
     if (role === 'industry') {
-      const { data: indProfile } = await supabase
+      const { data: industryProfile } = await supabase
         .from('industry_profiles')
         .select('company_name')
         .eq('user_id', supaUser.id)
         .maybeSingle();
-      companyName = indProfile?.company_name;
+      companyName = industryProfile?.company_name;
     }
 
     return {
@@ -66,52 +81,93 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       name: profile?.name || '',
       email: supaUser.email || '',
       role,
+      approved: profile?.approved ?? true,
       phone: profile?.phone || undefined,
       village: profile?.village || undefined,
       landSize: profile?.land_size ? Number(profile.land_size) : undefined,
       companyName,
-      location: profile?.lat && profile?.lng ? { lat: Number(profile.lat), lng: Number(profile.lng), address: profile.address || '' } : undefined,
+      location: profile?.lat && profile?.lng
+        ? {
+            lat: Number(profile.lat),
+            lng: Number(profile.lng),
+            address: profile.address || '',
+          }
+        : undefined,
     };
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        // Use setTimeout to avoid Supabase deadlock
-        setTimeout(async () => {
-          const u = await fetchUserProfile(session.user);
-          setUser(u);
-          setLoading(false);
-        }, 0);
-      } else {
+    const syncSessionUser = async (nextSession: Session | null) => {
+      setSession(nextSession);
+
+      if (!nextSession?.user) {
         setUser(null);
         setLoading(false);
+        return;
       }
+
+      const nextUser = await fetchUserProfile(nextSession.user);
+      if (!nextUser) {
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      setUser(nextUser);
+      setLoading(false);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      setTimeout(() => {
+        void syncSessionUser(nextSession);
+      }, 0);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        fetchUserProfile(session.user).then(u => {
-          setUser(u);
-          setLoading(false);
-        });
-      } else {
-        setLoading(false);
-      }
+    supabase.auth.getSession().then(({ data: { session: nextSession } }) => {
+      void syncSessionUser(nextSession);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string): Promise<{ error?: string }> => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
+
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('approved')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
+
+      if (profile?.approved === false) {
+        await supabase.auth.signOut();
+        return { error: 'Your account has been blocked. Contact the administrator.' };
+      }
+    }
+
     return {};
   };
 
-  const register = async (userData: { name: string; email: string; password: string; role: UserRole; phone?: string; village?: string; landSize?: number; companyName?: string; lat?: number; lng?: number; address?: string; industryType?: string; monthlyRequirement?: number; priceOfferedPerTon?: number }): Promise<{ error?: string }> => {
+  const register = async (userData: {
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    phone?: string;
+    village?: string;
+    landSize?: number;
+    companyName?: string;
+    lat?: number;
+    lng?: number;
+    address?: string;
+    industryType?: string;
+    monthlyRequirement?: number;
+    priceOfferedPerTon?: number;
+  }): Promise<{ error?: string; requiresEmailConfirmation?: boolean }> => {
     const { data, error } = await supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
@@ -125,34 +181,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     if (error) return { error: error.message };
 
-    // The trigger handle_new_user creates profile, role, and industry_profile automatically.
-    // After signup + email confirmation, update additional fields.
-    // We store extra data in a retry loop after auth state changes.
     if (data.user && data.session) {
-      // User is auto-confirmed or session exists — update now
-      await supabase.from('profiles').update({
-        phone: userData.phone || null,
-        village: userData.village || null,
-        land_size: userData.landSize || null,
-        lat: userData.lat || null,
-        lng: userData.lng || null,
-        address: userData.address || null,
-      }).eq('user_id', data.user.id);
-
-      if (userData.role === 'industry' && userData.companyName) {
-        await supabase.from('industry_profiles').update({
-          company_name: userData.companyName,
-          monthly_requirement: userData.monthlyRequirement || 0,
-          price_offered_per_ton: userData.priceOfferedPerTon || 0,
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          phone: userData.phone || null,
+          village: userData.village || null,
+          land_size: userData.landSize || null,
           lat: userData.lat || null,
           lng: userData.lng || null,
           address: userData.address || null,
-          industry_type: userData.industryType || 'Power Plant',
-        }).eq('user_id', data.user.id);
+        })
+        .eq('user_id', data.user.id);
+      if (profileError) return { error: profileError.message };
+
+      if (userData.role === 'industry' && userData.companyName) {
+        const { error: industryError } = await supabase
+          .from('industry_profiles')
+          .update({
+            company_name: userData.companyName,
+            monthly_requirement: userData.monthlyRequirement || 0,
+            price_offered_per_ton: userData.priceOfferedPerTon || 0,
+            lat: userData.lat || null,
+            lng: userData.lng || null,
+            address: userData.address || null,
+            industry_type: userData.industryType || 'Power Plant',
+          })
+          .eq('user_id', data.user.id);
+        if (industryError) return { error: industryError.message };
       }
     }
 
-    return {};
+    return { requiresEmailConfirmation: !data.session };
   };
 
   const logout = async () => {

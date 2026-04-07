@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Leaf, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -30,6 +31,15 @@ const Login = () => {
           setSubmitting(false);
           return;
         }
+        if (res.requiresEmailConfirmation) {
+          toast({
+            title: 'Check your email',
+            description: 'Your account was created. Confirm your email before signing in.',
+          });
+          setIsRegister(false);
+          setSubmitting(false);
+          return;
+        }
         toast({ title: 'Account created!', description: 'You are now logged in.' });
       } else {
         const res = await login(email, password);
@@ -41,9 +51,9 @@ const Login = () => {
       }
       // Small delay to let auth state propagate, then redirect based on actual user role
       setTimeout(async () => {
-        const { data: { session } } = await (await import('@/integrations/supabase/client')).supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          const { data: roleData } = await (await import('@/integrations/supabase/client')).supabase
+          const { data: roleData } = await supabase
             .from('user_roles')
             .select('role')
             .eq('user_id', session.user.id)
