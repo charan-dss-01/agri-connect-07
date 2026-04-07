@@ -13,9 +13,10 @@ serve(async (req) => {
   try {
     const { imageBase64, cropTypeHint } = await req.json();
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+    const aiGatewayUrl = Deno.env.get("AI_GATEWAY_URL");
+    const aiGatewayApiKey = Deno.env.get("AI_GATEWAY_API_KEY");
+    if (!aiGatewayUrl || !aiGatewayApiKey) {
+      throw new Error("AI gateway is not configured");
     }
 
     const messages: any[] = [
@@ -62,14 +63,14 @@ Respond ONLY with valid JSON in this exact format:
 Respond ONLY with valid JSON: {"cropType":"...","moisture":...,"qualityGrade":"...","confidence":...,"analysis":"..."}`;
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(aiGatewayUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${aiGatewayApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-4.1-mini",
         messages,
         temperature: 0.3,
       }),
@@ -113,10 +114,10 @@ Respond ONLY with valid JSON: {"cropType":"...","moisture":...,"qualityGrade":".
     // Fallback: return simulated result if AI fails
     const fallback = {
       cropType: "Paddy",
-      moisture: Math.floor(Math.random() * 15) + 12,
-      qualityGrade: ["A", "B", "C"][Math.floor(Math.random() * 3)],
-      confidence: Math.floor(Math.random() * 11) + 75,
-      analysis: "AI analysis unavailable. Using estimated values.",
+      moisture: 18,
+      qualityGrade: "B",
+      confidence: 0,
+      analysis: "AI analysis unavailable. Default values applied; please review manually.",
     };
 
     return new Response(JSON.stringify(fallback), {

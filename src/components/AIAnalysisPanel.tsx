@@ -1,22 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Cpu, Droplets, Award, Gauge, FileText } from 'lucide-react';
 import { adjustPriceForQuality, CROP_PRICES } from '@/data/mockData';
 import { supabase } from '@/integrations/supabase/client';
 
+interface AIAnalysisResult {
+  moisture: number;
+  grade: 'A' | 'B' | 'C';
+  confidence: number;
+  adjustedPrice: number;
+  detectedCropType?: string;
+  analysis?: string;
+}
+
 interface AIAnalysisPanelProps {
   cropType: string;
-  onAnalysisComplete: (result: { moisture: number; grade: 'A' | 'B' | 'C'; confidence: number; adjustedPrice: number; detectedCropType?: string; analysis?: string }) => void;
+  onAnalysisComplete: (result: AIAnalysisResult) => void;
   trigger: number;
   imageFile?: File | null;
 }
 
+function buildFallbackResult(cropType: string): AIAnalysisResult {
+  return {
+    moisture: 18,
+    grade: 'B',
+    confidence: 0,
+    adjustedPrice: CROP_PRICES[cropType] || 1500,
+    detectedCropType: cropType,
+    analysis: 'AI analysis is unavailable. Default pricing is being used, so please review before submitting.',
+  };
+}
+
 export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger, imageFile }: AIAnalysisPanelProps) {
   const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<{ moisture: number; grade: 'A' | 'B' | 'C'; confidence: number; adjustedPrice: number; detectedCropType?: string; analysis?: string } | null>(null);
+  const [result, setResult] = useState<AIAnalysisResult | null>(null);
   const [analysisStep, setAnalysisStep] = useState(0);
 
   useEffect(() => {
     if (trigger === 0) return;
+
     setAnalyzing(true);
     setResult(null);
     setAnalysisStep(0);
@@ -24,8 +45,9 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
     const stepTimer1 = setTimeout(() => setAnalysisStep(1), 500);
     const stepTimer2 = setTimeout(() => setAnalysisStep(2), 1200);
     const stepTimer3 = setTimeout(() => setAnalysisStep(3), 1800);
+    let cancelled = false;
 
-    const analyzeWithAI = async () => {
+    const analyzeWithAI = async (): Promise<AIAnalysisResult> => {
       try {
         let imageBase64: string | null = null;
 
@@ -54,45 +76,40 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
           analysis: string;
         };
 
-        const adjustedPrice = adjustPriceForQuality(
-          CROP_PRICES[aiResult.cropType] || CROP_PRICES[cropType] || 1500,
-          aiResult.cropType || cropType,
-          aiResult.moisture,
-          aiResult.qualityGrade
-        );
-
-        const res = {
+        return {
           moisture: aiResult.moisture,
           grade: aiResult.qualityGrade,
           confidence: aiResult.confidence,
-          adjustedPrice,
+          adjustedPrice: adjustPriceForQuality(
+            CROP_PRICES[aiResult.cropType] || CROP_PRICES[cropType] || 1500,
+            aiResult.cropType || cropType,
+            aiResult.moisture,
+            aiResult.qualityGrade
+          ),
           detectedCropType: aiResult.cropType,
           analysis: aiResult.analysis,
         };
-
-        setResult(res);
-        setAnalyzing(false);
-        onAnalysisComplete(res);
       } catch (err) {
         console.error('AI analysis error:', err);
-        // Fallback to basic analysis
-        const moisture = Math.floor(Math.random() * 15) + 12;
-        const grades: ('A' | 'B' | 'C')[] = ['A', 'B', 'C'];
-        const grade = grades[Math.floor(Math.random() * 3)];
-        const confidence = Math.floor(Math.random() * 11) + 75;
-        const adjustedPrice = adjustPriceForQuality(CROP_PRICES[cropType] || 1500, cropType, moisture, grade);
-        const res = { moisture, grade, confidence, adjustedPrice, analysis: 'Fallback analysis used.' };
-        setResult(res);
-        setAnalyzing(false);
-        onAnalysisComplete(res);
+        return buildFallbackResult(cropType);
       }
     };
 
-    // Start AI analysis (min 2s for UX)
-    const minDelay = new Promise(resolve => setTimeout(resolve, 2500));
-    Promise.all([analyzeWithAI(), minDelay]);
+    void (async () => {
+      const [analysisResult] = await Promise.all([
+        analyzeWithAI(),
+        new Promise((resolve) => setTimeout(resolve, 2500)),
+      ]);
+
+      if (cancelled) return;
+
+      setResult(analysisResult);
+      setAnalyzing(false);
+      onAnalysisComplete(analysisResult);
+    })();
 
     return () => {
+      cancelled = true;
       clearTimeout(stepTimer1);
       clearTimeout(stepTimer2);
       clearTimeout(stepTimer3);
@@ -106,7 +123,7 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
       <div className="flex items-center gap-2 mb-3">
         <Cpu className="w-4 h-4 text-primary" />
         <span className="text-sm font-semibold text-primary">AI Crop Analysis</span>
-        {imageFile && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">🖼 Image detected</span>}
+        {imageFile && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">Image detected</span>}
       </div>
 
       {analyzing ? (
@@ -178,7 +195,7 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
 
           {result.adjustedPrice !== (CROP_PRICES[result.detectedCropType || cropType] || CROP_PRICES[cropType]) && (
             <div className="text-xs bg-warning/10 text-warning rounded-lg p-2 text-center">
-              ⚡ Price adjusted to <strong>₹{result.adjustedPrice}/ton</strong> based on quality analysis
+              Price adjusted to <strong>Rs {result.adjustedPrice}/ton</strong> based on quality analysis
             </div>
           )}
         </div>

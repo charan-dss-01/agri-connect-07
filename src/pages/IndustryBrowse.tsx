@@ -31,6 +31,19 @@ const IndustryBrowse = () => {
       return;
     }
 
+    const { data: existingRequest } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('listing_id', listing.id)
+      .eq('industry_id', user.id)
+      .in('status', ['pending', 'accepted', 'completed'])
+      .maybeSingle();
+
+    if (existingRequest) {
+      toast({ title: 'Request already exists', description: 'You already have an active request for this listing.' });
+      return;
+    }
+
     const dist = (industryProfile.lat && industryProfile.lng && listing.lat && listing.lng)
       ? calculateDistance(Number(industryProfile.lat), Number(industryProfile.lng), Number(listing.lat), Number(listing.lng))
       : 0;
