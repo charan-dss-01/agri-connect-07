@@ -82,6 +82,9 @@ const FarmerDashboard = () => {
         {/* Carbon Credits */}
         <CarbonCreditsCard totalBiomass={totalBiomass} />
 
+        {/* Gamification */}
+        <GamificationCard />
+
         {/* Quick access cards */}
         <div className="grid md:grid-cols-2 gap-4">
           <div
