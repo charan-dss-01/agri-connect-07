@@ -80,7 +80,7 @@ const admin = {
   },
   transactions: {
     title: "All Transactions",
-    total: "{{count}} total",
+    totalCount: "{{count}} total",
     summary: {
       totalTransactions: "Total Transactions",
       totalValue: "Total Value",
