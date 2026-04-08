@@ -78,6 +78,9 @@ const IndustryDashboard = () => {
             <p className="text-sm text-muted-foreground">{t('dashboard.requestsDescription', { ns: 'industry', total: transactions.length, pending: pendingCount })}</p>
           </Link>
         </div>
+
+        {/* Gamification */}
+        <GamificationCard />
       </div>
     </DashboardLayout>
   );
