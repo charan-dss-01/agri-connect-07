@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Leaf, LogOut, Home, BarChart3, Users, Factory, Wheat, Menu, Settings, ShoppingCart } from 'lucide-react';
+import { Leaf, LogOut, Home, BarChart3, Users, Factory, Wheat, Menu, Settings, ShoppingCart, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
 import NotificationPanel from '@/components/NotificationPanel';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
