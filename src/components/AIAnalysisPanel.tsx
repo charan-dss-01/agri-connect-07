@@ -21,7 +21,7 @@ interface AIAnalysisPanelProps {
 }
 
 export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger, imageFile }: AIAnalysisPanelProps) {
-  const { t } = useTranslation('farmer');
+  const { t } = useTranslation(['farmer']);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AIAnalysisResult | null>(null);
   const [analysisStep, setAnalysisStep] = useState(0);
