@@ -14,6 +14,58 @@ export type Database = {
   }
   public: {
     Tables: {
+      complaints: {
+        Row: {
+          accused_id: string
+          complainant_id: string
+          created_at: string
+          id: string
+          reason: string
+          status: string
+          transaction_id: string | null
+        }
+        Insert: {
+          accused_id: string
+          complainant_id: string
+          created_at?: string
+          id?: string
+          reason: string
+          status?: string
+          transaction_id?: string | null
+        }
+        Update: {
+          accused_id?: string
+          complainant_id?: string
+          created_at?: string
+          id?: string
+          reason?: string
+          status?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaints_accused_id_fkey"
+            columns: ["accused_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_complainant_id_fkey"
+            columns: ["complainant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       industry_profiles: {
         Row: {
           address: string | null
