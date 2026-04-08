@@ -5,9 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Wheat, CheckCircle, Clock, XCircle, Loader2 } from 'lucide-react';
 import TransactionTimeline from '@/components/TransactionTimeline';
 import { useTranslation } from 'react-i18next';
+import { toast } from '@/hooks/use-toast';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const { t } = useTranslation(['farmer']);
+  const translate = t as any;
   const map: Record<string, string> = {
     pending: 'bg-warning/15 text-warning',
     accepted: 'bg-info/15 text-info',
@@ -18,7 +20,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   const Icon = icons[status] || Clock;
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${map[status] || ''}`}>
-      <Icon className="w-3 h-3" /> {t(`statuses.${status}`, { ns: 'farmer' })}
+      <Icon className="w-3 h-3" /> {translate(`statuses.${status}`, { ns: 'farmer' })}
     </span>
   );
 };
@@ -27,9 +29,14 @@ const FarmerRequests = () => {
   const { user } = useAuth();
   const [myTransactions, setMyTransactions] = useState<any[]>([]);
   const [expandedTx, setExpandedTx] = useState<string | null>(null);
+  const [reportingTxId, setReportingTxId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [reporting, setReporting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
-  const { t: translate } = useTranslation(['common', 'farmer']);
+  const { t } = useTranslation(['common', 'farmer']);
+  const translate = t as any;
 
   const fetchData = useCallback(async () => {
     if (!user?.id) return;
@@ -43,6 +50,62 @@ const FarmerRequests = () => {
   }, [user?.id]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const startReport = (txId: string) => {
+    if (reportingTxId === txId) {
+      setReportingTxId(null);
+      setReportReason('');
+      setReportDetails('');
+      return;
+    }
+
+    setReportingTxId(txId);
+    setReportReason('');
+    setReportDetails('');
+  };
+
+  const submitReport = async (transaction: any) => {
+    if (!user?.id) return;
+
+    const reason = reportReason.trim();
+    if (!reason) {
+      toast({
+        title: translate('requests.report.requiredReason', { ns: 'farmer' }),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setReporting(true);
+
+    const details = reportDetails.trim();
+    const { error } = await supabase.from('fraud_reports').insert({
+      reporter_user_id: user.id,
+      reported_user_id: transaction.industry_id,
+      reason,
+      details: details || `Transaction: ${transaction.id}`,
+    });
+
+    setReporting(false);
+
+    if (error) {
+      toast({
+        title: translate('requests.report.failedTitle', { ns: 'farmer' }),
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: translate('requests.report.successTitle', { ns: 'farmer' }),
+      description: translate('requests.report.successDescription', { ns: 'farmer' }),
+    });
+
+    setReportingTxId(null);
+    setReportReason('');
+    setReportDetails('');
+  };
 
   const filtered = filter === 'all' ? myTransactions : myTransactions.filter(t => t.status === filter);
 
@@ -141,6 +204,55 @@ const FarmerRequests = () => {
                     </div>
                     <StatusBadge status={t.status} />
                   </div>
+                  <div className="mt-2 flex justify-end">
+                    <button
+                      onClick={() => startReport(t.id)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                    >
+                      {translate('requests.report.button', { ns: 'farmer' })}
+                    </button>
+                  </div>
+
+                  {reportingTxId === t.id && (
+                    <div className="mt-3 p-3 rounded-lg border border-border bg-muted/30 space-y-2">
+                      <p className="text-xs font-semibold">{translate('requests.report.title', { ns: 'farmer' })}</p>
+                      <div>
+                        <label className="text-xs text-muted-foreground">{translate('requests.report.reasonLabel', { ns: 'farmer' })}</label>
+                        <input
+                          type="text"
+                          value={reportReason}
+                          onChange={(e) => setReportReason(e.target.value)}
+                          placeholder={translate('requests.report.reasonPlaceholder', { ns: 'farmer' })}
+                          className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">{translate('requests.report.detailsLabel', { ns: 'farmer' })}</label>
+                        <textarea
+                          value={reportDetails}
+                          onChange={(e) => setReportDetails(e.target.value)}
+                          placeholder={translate('requests.report.detailsPlaceholder', { ns: 'farmer' })}
+                          className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-xs min-h-20 focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => startReport(t.id)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted text-muted-foreground hover:bg-secondary transition-colors"
+                        >
+                          {translate('requests.report.cancel', { ns: 'farmer' })}
+                        </button>
+                        <button
+                          disabled={reporting}
+                          onClick={() => submitReport(t)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60 transition-colors"
+                        >
+                          {reporting ? translate('requests.report.submitting', { ns: 'farmer' }) : translate('requests.report.submit', { ns: 'farmer' })}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {expandedTx === t.id && (
                     <div className="mt-3 pt-3 border-t border-border">
                       <TransactionTimeline transaction={{

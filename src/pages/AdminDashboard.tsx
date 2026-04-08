@@ -257,32 +257,32 @@ const AdminDashboard = () => {
             <p className="text-sm text-muted-foreground text-center py-8">{t('dashboard.noTransactions', { ns: 'admin' })}</p>
           ) : (
             <div className="space-y-3">
-              {transactions.map(t => (
-                <div key={t.id} className="border border-border rounded-lg p-4">
+              {transactions.map((txn) => (
+                <div key={txn.id} className="border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium">{t.crop_type} • {Number(t.quantity)}t</p>
-                      <p className="text-xs text-muted-foreground">₹{Number(t.total_value).toLocaleString()} • {Number(t.transport_distance || 0)}km</p>
+                      <p className="text-sm font-medium">{txn.crop_type} • {Number(txn.quantity)}t</p>
+                      <p className="text-xs text-muted-foreground">₹{Number(txn.total_value).toLocaleString()} • {Number(txn.transport_distance || 0)}km</p>
                     </div>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      t.status === 'completed' ? 'bg-success/15 text-success' :
-                      t.status === 'accepted' ? 'bg-info/15 text-info' :
-                      t.status === 'pending' ? 'bg-warning/15 text-warning' :
+                      txn.status === 'completed' ? 'bg-success/15 text-success' :
+                      txn.status === 'accepted' ? 'bg-info/15 text-info' :
+                      txn.status === 'pending' ? 'bg-warning/15 text-warning' :
                       'bg-destructive/15 text-destructive'
-                    }`}>{t(`dashboard.statusLabels.${t.status}`, { ns: 'admin' })}</span>
+                    }`}>{t(`dashboard.statusLabels.${txn.status}`, { ns: 'admin' })}</span>
                   </div>
-                  <button onClick={() => setExpandedTx(expandedTx === t.id ? null : t.id)} className="text-[10px] text-primary mt-2 hover:underline">
-                    {expandedTx === t.id ? t('dashboard.hideTimeline', { ns: 'admin' }) : t('dashboard.showTimeline', { ns: 'admin' })}
+                  <button onClick={() => setExpandedTx(expandedTx === txn.id ? null : txn.id)} className="text-[10px] text-primary mt-2 hover:underline">
+                    {expandedTx === txn.id ? t('dashboard.hideTimeline', { ns: 'admin' }) : t('dashboard.showTimeline', { ns: 'admin' })}
                   </button>
-                  {expandedTx === t.id && (
+                  {expandedTx === txn.id && (
                     <div className="mt-2 pt-2 border-t border-border">
                       <TransactionTimeline transaction={{
-                        id: t.id, farmerId: t.farmer_id, farmerName: '', industryId: t.industry_id, industryName: '',
-                        cropType: t.crop_type, quantity: Number(t.quantity), pricePerTon: Number(t.price_per_ton),
-                        totalValue: Number(t.total_value), transportCost: Number(t.transport_cost || 0),
-                        netProfit: Number(t.net_profit || 0), distance: Number(t.transport_distance || 0),
-                        status: t.status, createdAt: t.created_at, pickupDate: t.pickup_date,
-                        clusterEligible: t.cluster_eligible, transportSavings: Number(t.transport_savings || 0),
+                        id: txn.id, farmerId: txn.farmer_id, farmerName: '', industryId: txn.industry_id, industryName: '',
+                        cropType: txn.crop_type, quantity: Number(txn.quantity), pricePerTon: Number(txn.price_per_ton),
+                        totalValue: Number(txn.total_value), transportCost: Number(txn.transport_cost || 0),
+                        netProfit: Number(txn.net_profit || 0), distance: Number(txn.transport_distance || 0),
+                        status: txn.status, createdAt: txn.created_at, pickupDate: txn.pickup_date,
+                        clusterEligible: txn.cluster_eligible, transportSavings: Number(txn.transport_savings || 0),
                       }} />
                     </div>
                   )}

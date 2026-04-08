@@ -17,6 +17,7 @@ const common = {
     browseListings: "Browse Listings",
     users: "Users",
     transactions: "Transactions",
+    fraudReports: "Fraud Reports",
     logout: "Logout",
   },
   header: {

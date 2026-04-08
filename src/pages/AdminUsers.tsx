@@ -13,6 +13,7 @@ interface MergedUser {
   phone: string | null;
   village: string | null;
   land_size: number | null;
+  credit_score: number;
   approved: boolean;
   created_at: string;
   role: string;
@@ -223,6 +224,7 @@ const AdminUsers = () => {
                           <p>{u.industryType}</p>
                         )}
                         {u.role === 'admin' && <p>{t('users.administrator', { ns: 'admin' })}</p>}
+                        <p className="text-success">{t('dashboard.credits', { ns: 'admin', count: Number(u.credit_score || 0) })}</p>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${

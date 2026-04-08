@@ -16,6 +16,7 @@ import IndustryRequests from "./pages/IndustryRequests";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminTransactions from "./pages/AdminTransactions";
+import AdminFraudReports from "./pages/AdminFraudReports";
 import ProfileSettings from "./pages/ProfileSettings";
 import NotFound from "./pages/NotFound";
 
@@ -30,7 +31,7 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
 }
 
 const AppRoutes = () => (
-  <BrowserRouter>
+  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
@@ -45,6 +46,7 @@ const AppRoutes = () => (
       <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute allowedRole="admin"><AdminUsers /></ProtectedRoute>} />
       <Route path="/admin/transactions" element={<ProtectedRoute allowedRole="admin"><AdminTransactions /></ProtectedRoute>} />
+      <Route path="/admin/fraud-reports" element={<ProtectedRoute allowedRole="admin"><AdminFraudReports /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute allowedRole="admin"><ProfileSettings /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>

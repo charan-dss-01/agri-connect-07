@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Leaf, LogOut, Home, BarChart3, Users, Factory, Wheat, Menu, Settings, ShoppingCart } from 'lucide-react';
+import { Leaf, LogOut, Home, BarChart3, Users, Factory, Wheat, Menu, Settings, ShoppingCart, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
 import NotificationPanel from '@/components/NotificationPanel';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -41,6 +41,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         { icon: Home, label: t('navigation.dashboard'), path: '/admin' },
         { icon: Users, label: t('navigation.users'), path: '/admin/users' },
         { icon: BarChart3, label: t('navigation.transactions'), path: '/admin/transactions' },
+        { icon: ShieldAlert, label: t('navigation.fraudReports'), path: '/admin/fraud-reports' },
         { icon: Settings, label: t('navigation.settings'), path: '/admin/settings' },
       ];
 

@@ -14,6 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
+      credit_score_events: {
+        Row: {
+          balance_after: number | null
+          created_at: string
+          delta: number
+          event_key: string
+          id: string
+          metadata: Json
+          source: string
+          source_id: string | null
+          user_id: string
+        }
+        Insert: {
+          balance_after?: number | null
+          created_at?: string
+          delta: number
+          event_key: string
+          id?: string
+          metadata?: Json
+          source: string
+          source_id?: string | null
+          user_id: string
+        }
+        Update: {
+          balance_after?: number | null
+          created_at?: string
+          delta?: number
+          event_key?: string
+          id?: string
+          metadata?: Json
+          source?: string
+          source_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      credit_score_rules: {
+        Row: {
+          id: boolean
+          penalty_default_points: number
+          reward_fixed_points: number
+          reward_mode: string
+          reward_per_ton_points: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          penalty_default_points?: number
+          reward_fixed_points?: number
+          reward_mode?: string
+          reward_per_ton_points?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          penalty_default_points?: number
+          reward_fixed_points?: number
+          reward_mode?: string
+          reward_per_ton_points?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      fraud_reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          penalty_points: number | null
+          reason: string
+          reported_user_id: string
+          reporter_user_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          penalty_points?: number | null
+          reason: string
+          reported_user_id: string
+          reporter_user_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          penalty_points?: number | null
+          reason?: string
+          reported_user_id?: string
+          reporter_user_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       industry_profiles: {
         Row: {
           address: string | null
@@ -84,6 +192,7 @@ export type Database = {
         Row: {
           address: string | null
           approved: boolean
+          credit_score: number
           created_at: string
           email: string | null
           id: string
@@ -99,6 +208,7 @@ export type Database = {
         Insert: {
           address?: string | null
           approved?: boolean
+          credit_score?: number
           created_at?: string
           email?: string | null
           id?: string
@@ -114,6 +224,7 @@ export type Database = {
         Update: {
           address?: string | null
           approved?: boolean
+          credit_score?: number
           created_at?: string
           email?: string | null
           id?: string
@@ -279,6 +390,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_credit_score_delta: {
+        Args: {
+          p_delta: number
+          p_event_key: string
+          p_metadata?: Json
+          p_source: string
+          p_source_id: string | null
+          p_user_id: string
+        }
+        Returns: number
+      }
       get_public_stats: { Args: never; Returns: Json }
       has_role: {
         Args: {

@@ -15,6 +15,7 @@ serve(async (req) => {
 
     const aiGatewayUrl = Deno.env.get("AI_GATEWAY_URL");
     const aiGatewayApiKey = Deno.env.get("AI_GATEWAY_API_KEY");
+    const aiModel = Deno.env.get("AI_MODEL") || "gpt-4o-mini";
     if (!aiGatewayUrl || !aiGatewayApiKey) {
       throw new Error("AI gateway is not configured");
     }
@@ -70,7 +71,7 @@ Respond ONLY with valid JSON: {"cropType":"...","moisture":...,"qualityGrade":".
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4.1-mini",
+        model: aiModel,
         messages,
         temperature: 0.3,
       }),
@@ -111,13 +112,15 @@ Respond ONLY with valid JSON: {"cropType":"...","moisture":...,"qualityGrade":".
   } catch (error) {
     console.error("Error in analyze-crop:", error);
 
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
     // Fallback: return simulated result if AI fails
     const fallback = {
       cropType: "Paddy",
       moisture: 18,
       qualityGrade: "B",
       confidence: 0,
-      analysis: "AI analysis unavailable. Default values applied; please review manually.",
+      analysis: `AI analysis unavailable (${errorMessage}). Default values applied; please review manually.`,
     };
 
     return new Response(JSON.stringify(fallback), {

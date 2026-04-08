@@ -80,7 +80,7 @@ const admin = {
   },
   transactions: {
     title: "All Transactions",
-    total: "{{count}} total",
+    totalCount: "{{count}} total",
     summary: {
       totalTransactions: "Total Transactions",
       totalValue: "Total Value",
@@ -99,7 +99,7 @@ const admin = {
     unknownFarmer: "Unknown Farmer",
     unknownIndustry: "Unknown Industry",
     cluster: "Cluster",
-    total: "Total: {{value}}",
+    totalValueLabel: "Total: {{value}}",
     transport: "Transport: {{value}}",
     saved: "Saved: {{value}}",
     distance: "{{distance}} km",
@@ -115,6 +115,70 @@ const admin = {
   toasts: {
     userApproved: "User Approved",
     userBlocked: "User Blocked",
+  },
+  fraud: {
+    title: "Fraud Reports Review",
+    totalReports: "{{count}} total reports",
+    summary: {
+      total: "Total Reports",
+      pending: "Pending",
+      verified: "Verified",
+      rejected: "Rejected",
+    },
+    searchPlaceholder: "Search by reason, details, user name, or email...",
+    filters: {
+      all: "All",
+      pending: "Pending",
+      verified: "Verified",
+      rejected: "Rejected",
+    },
+    noMatch: "No reports match your filters.",
+    reporter: "Reporter",
+    reported: "Reported User",
+    unknownUser: "Unknown User",
+    penalty: "Penalty: {{points}} points",
+    viewScoreHistory: "View Score History",
+    status: {
+      pending: "Pending",
+      verified: "Verified",
+      rejected: "Rejected",
+    },
+    actions: {
+      verify: "Verify",
+      reject: "Reject",
+    },
+    rules: {
+      title: "Credit Score Formula Settings",
+      save: "Save Rules",
+      rewardMode: "Reward Mode",
+      fixed: "Fixed per completed transaction",
+      quantityBased: "Quantity based (per ton)",
+      fixedPoints: "Fixed reward points",
+      perTonPoints: "Points per ton",
+      defaultPenalty: "Default fraud penalty points",
+    },
+    scoreHistory: {
+      title: "Score History",
+      userSelector: "Select User",
+      selectHint: "Pick a reported user to view score history.",
+      empty: "No score events for this user yet.",
+      currentScore: "Current Score: {{score}}",
+      balanceAfter: "Balance After: {{score}}",
+      reason: "Reason: {{reason}}",
+      sources: {
+        signup_bonus: "Signup Bonus",
+        transaction_completed: "Transaction Completed",
+        fraud_penalty: "Fraud Penalty",
+        admin_adjustment: "Admin Adjustment",
+      },
+    },
+    toasts: {
+      reportVerified: "Report verified and penalty applied",
+      reportRejected: "Report rejected",
+      reviewFailed: "Could not update report",
+      rulesSaved: "Credit score rules updated",
+      rulesSaveFailed: "Could not save rules",
+    },
   },
 } as const;
 

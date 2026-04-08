@@ -80,7 +80,7 @@ const admin = {
   },
   transactions: {
     title: "सभी लेनदेन",
-    total: "कुल {{count}}",
+    totalCount: "कुल {{count}}",
     summary: {
       totalTransactions: "कुल लेनदेन",
       totalValue: "कुल मूल्य",
@@ -99,7 +99,7 @@ const admin = {
     unknownFarmer: "अज्ञात किसान",
     unknownIndustry: "अज्ञात उद्योग",
     cluster: "क्लस्टर",
-    total: "कुल: {{value}}",
+    totalValueLabel: "कुल: {{value}}",
     transport: "परिवहन: {{value}}",
     saved: "बचा: {{value}}",
     distance: "{{distance}} किमी",
@@ -115,6 +115,70 @@ const admin = {
   toasts: {
     userApproved: "उपयोगकर्ता स्वीकृत",
     userBlocked: "उपयोगकर्ता अवरुद्ध",
+  },
+  fraud: {
+    title: "धोखाधड़ी रिपोर्ट समीक्षा",
+    totalReports: "कुल {{count}} रिपोर्ट",
+    summary: {
+      total: "कुल रिपोर्ट",
+      pending: "लंबित",
+      verified: "सत्यापित",
+      rejected: "अस्वीकृत",
+    },
+    searchPlaceholder: "कारण, विवरण, उपयोगकर्ता नाम या ईमेल से खोजें...",
+    filters: {
+      all: "सभी",
+      pending: "लंबित",
+      verified: "सत्यापित",
+      rejected: "अस्वीकृत",
+    },
+    noMatch: "आपके फ़िल्टर से कोई रिपोर्ट मेल नहीं खाती।",
+    reporter: "रिपोर्ट करने वाला",
+    reported: "रिपोर्ट किया गया उपयोगकर्ता",
+    unknownUser: "अज्ञात उपयोगकर्ता",
+    penalty: "दंड: {{points}} अंक",
+    viewScoreHistory: "स्कोर इतिहास देखें",
+    status: {
+      pending: "लंबित",
+      verified: "सत्यापित",
+      rejected: "अस्वीकृत",
+    },
+    actions: {
+      verify: "सत्यापित करें",
+      reject: "अस्वीकार करें",
+    },
+    rules: {
+      title: "क्रेडिट स्कोर फार्मूला सेटिंग्स",
+      save: "नियम सहेजें",
+      rewardMode: "रिवॉर्ड मोड",
+      fixed: "प्रति पूर्ण लेनदेन स्थिर",
+      quantityBased: "मात्रा आधारित (प्रति टन)",
+      fixedPoints: "स्थिर रिवॉर्ड अंक",
+      perTonPoints: "प्रति टन अंक",
+      defaultPenalty: "डिफ़ॉल्ट धोखाधड़ी दंड अंक",
+    },
+    scoreHistory: {
+      title: "स्कोर इतिहास",
+      userSelector: "उपयोगकर्ता चुनें",
+      selectHint: "स्कोर इतिहास देखने के लिए रिपोर्ट किया गया उपयोगकर्ता चुनें।",
+      empty: "इस उपयोगकर्ता के लिए अभी कोई स्कोर घटना नहीं है।",
+      currentScore: "वर्तमान स्कोर: {{score}}",
+      balanceAfter: "बाद का बैलेंस: {{score}}",
+      reason: "कारण: {{reason}}",
+      sources: {
+        signup_bonus: "साइनअप बोनस",
+        transaction_completed: "लेनदेन पूर्ण",
+        fraud_penalty: "धोखाधड़ी दंड",
+        admin_adjustment: "एडमिन समायोजन",
+      },
+    },
+    toasts: {
+      reportVerified: "रिपोर्ट सत्यापित हुई और दंड लागू हुआ",
+      reportRejected: "रिपोर्ट अस्वीकार की गई",
+      reviewFailed: "रिपोर्ट अपडेट नहीं हो सकी",
+      rulesSaved: "क्रेडिट स्कोर नियम अपडेट हुए",
+      rulesSaveFailed: "नियम सहेजे नहीं जा सके",
+    },
   },
 } as const;
 
