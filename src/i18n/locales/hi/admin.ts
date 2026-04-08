@@ -80,7 +80,7 @@ const admin = {
   },
   transactions: {
     title: "सभी लेनदेन",
-    total: "कुल {{count}}",
+    totalCount: "कुल {{count}}",
     summary: {
       totalTransactions: "कुल लेनदेन",
       totalValue: "कुल मूल्य",
