@@ -11,9 +11,11 @@ import AIAnalysisPanel from '@/components/AIAnalysisPanel';
 import ClusterSavings from '@/components/ClusterSavings';
 import LocationPicker from '@/components/LocationPicker';
 import { toast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 const FarmerListResidue = () => {
   const { user } = useAuth();
+  const { t } = useTranslation(['common', 'farmer']);
   const [cropType, setCropType] = useState('Paddy');
   const [quantity, setQuantity] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -94,11 +96,11 @@ const FarmerListResidue = () => {
 
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
+      toast({ title: t('listing.errorTitle', { ns: 'farmer' }), description: error.message, variant: 'destructive' });
       setCurrentListingId(data.id);
       setSubmitted(true);
       toast({ title: 'Listing Submitted!', description: `${qty} tons of ${cropType} listed successfully.` });
-      fetchData();
+      toast({ title: t('listing.submittedToastTitle', { ns: 'farmer' }), description: t('listing.submittedToastDescription', { ns: 'farmer', quantity: qty, cropType }) });
     }
     setSubmittingListing(false);
   };
@@ -115,7 +117,7 @@ const FarmerListResidue = () => {
       .maybeSingle();
 
     if (existingRequest) {
-      toast({ title: 'Request already sent', description: 'This industry already has an active request for the current listing.' });
+      toast({ title: t('listing.requestExistsTitle', { ns: 'farmer' }), description: t('listing.requestExistsDescription', { ns: 'farmer' }) });
       return;
     }
 
@@ -138,13 +140,13 @@ const FarmerListResidue = () => {
     });
 
     if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: t('listing.errorTitle', { ns: 'farmer' }), description: error.message, variant: 'destructive' });
     } else {
       setSentRequests(prev => [...prev, ind.id]);
-      toast({ title: 'Request Sent!', description: 'Your sell request has been sent to the industry.' });
+      toast({ title: t('listing.requestSentTitle', { ns: 'farmer' }), description: t('listing.requestSentDescription', { ns: 'farmer' }) });
       await supabase.from('notifications').insert({
         user_id: ind.user_id,
-        message: `New residue listing from ${user.name} — ${qty} tons of ${cropType}`,
+        message: t('listing.notificationMessage', { ns: 'farmer', name: user.name || t('roles.farmer', { ns: 'common' }), quantity: qty, cropType }),
         type: 'info',
       });
     }
@@ -184,13 +186,13 @@ const FarmerListResidue = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">List Crop Residue</h2>
+          <h2 className="text-2xl font-bold">{t('listing.title', { ns: 'farmer' })}</h2>
           {submitted && (
             <button
               onClick={resetForm}
               className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
             >
-              <Wheat className="w-4 h-4" /> New Listing
+              <Wheat className="w-4 h-4" /> {t('listing.newListing', { ns: 'farmer' })}
             </button>
           )}
         </div>
@@ -200,12 +202,12 @@ const FarmerListResidue = () => {
           {!submitted ? (
             <div className="space-y-4 max-w-xl">
               <div>
-                <label className="text-xs font-medium mb-1 block">Upload Image (AI will classify)</label>
+                <label className="text-xs font-medium mb-1 block">{t('listing.uploadLabel', { ns: 'farmer' })}</label>
                 <label className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/40 transition-colors block">
                   <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                   <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">{imageFile ? imageFile.name : 'Click to upload or drag & drop'}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">AI will analyze crop type, moisture & quality</p>
+                  <p className="text-xs text-muted-foreground">{imageFile ? imageFile.name : t('listing.uploadPlaceholder', { ns: 'farmer' })}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">{t('listing.uploadHint', { ns: 'farmer' })}</p>
                 </label>
               </div>
 
@@ -224,14 +226,16 @@ const FarmerListResidue = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-medium mb-1 block">Crop Type</label>
+                  <label className="text-xs font-medium mb-1 block">{t('listing.cropType', { ns: 'farmer' })}</label>
                   <select value={cropType} onChange={e => { setCropType(e.target.value); setAdjustedPrice(null); }} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm">
-                    <option>Paddy</option><option>Wheat</option><option>Sugarcane</option>
+                    <option value="Paddy">{t('cropTypes.paddy', { ns: 'farmer' })}</option>
+                    <option value="Wheat">{t('cropTypes.wheat', { ns: 'farmer' })}</option>
+                    <option value="Sugarcane">{t('cropTypes.sugarcane', { ns: 'farmer' })}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-medium mb-1 block">Quantity (tons)</label>
-                  <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm" placeholder="e.g. 10" />
+                  <label className="text-xs font-medium mb-1 block">{t('listing.quantity', { ns: 'farmer' })}</label>
+                  <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm" placeholder={t('listing.quantityPlaceholder', { ns: 'farmer' })} />
                 </div>
               </div>
               <LocationPicker
@@ -248,10 +252,10 @@ const FarmerListResidue = () => {
 
               {qty > 0 && (
                 <div className="bg-muted rounded-lg p-4 space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">Estimated Breakdown</p>
+                  <p className="text-xs font-medium text-muted-foreground">{t('listing.estimatedBreakdown', { ns: 'farmer' })}</p>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <span className="text-muted-foreground">Price per ton:</span><span className="font-medium">₹{pricePerTon}</span>
-                    <span className="text-muted-foreground">Total value:</span><span className="font-medium text-success">₹{totalValue.toLocaleString()}</span>
+                    <span className="text-muted-foreground">{t('listing.pricePerTon', { ns: 'farmer' })}</span><span className="font-medium">₹{pricePerTon}</span>
+                    <span className="text-muted-foreground">{t('listing.totalValue', { ns: 'farmer' })}</span><span className="font-medium text-success">₹{totalValue.toLocaleString()}</span>
                   </div>
                 </div>
               )}
@@ -262,7 +266,7 @@ const FarmerListResidue = () => {
                 className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {submittingListing && <Loader2 className="w-4 h-4 animate-spin" />}
-                Submit Listing
+                {t('listing.submitListing', { ns: 'farmer' })}
               </button>
             </div>
           ) : (
@@ -270,15 +274,15 @@ const FarmerListResidue = () => {
               <div className="bg-success/10 border border-success/20 rounded-lg p-4 flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-success mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm">Listing submitted successfully!</p>
-                  <p className="text-xs text-muted-foreground mt-1">{qty} tons of {cropType} — Estimated value: ₹{totalValue.toLocaleString()}</p>
+                  <p className="font-medium text-sm">{t('listing.successTitle', { ns: 'farmer' })}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('listing.successDescription', { ns: 'farmer', quantity: qty, cropType, value: `₹${totalValue.toLocaleString()}` })}</p>
                 </div>
               </div>
 
-              <h4 className="font-semibold">Nearby Industries (sorted by distance)</h4>
+              <h4 className="font-semibold">{t('listing.nearbyIndustries', { ns: 'farmer' })}</h4>
               <div className="space-y-3">
                 {nearbyIndustries.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">No industries registered yet.</p>
+                  <p className="text-sm text-muted-foreground text-center py-8">{t('listing.noIndustries', { ns: 'farmer' })}</p>
                 ) : nearbyIndustries.map(ind => (
                   <div key={ind.id} className="bg-muted/50 rounded-lg p-4 animate-fade-in">
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
@@ -287,16 +291,16 @@ const FarmerListResidue = () => {
                           <p className="font-medium text-sm">{ind.company_name}</p>
                           {ind.isCluster && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success">
-                              <Users className="w-2.5 h-2.5" /> Cluster Eligible
+                              <Users className="w-2.5 h-2.5" /> {t('cluster.eligible', { ns: 'farmer' })}
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground">{ind.industry_type} • {ind.address || 'Unknown'}</p>
+                        <p className="text-xs text-muted-foreground">{ind.industry_type} • {ind.address || t('listing.unknownAddress', { ns: 'farmer' })}</p>
                         <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                          <span>📍 {ind.distance} km</span>
+                          <span>📍 {t('listing.distance', { ns: 'farmer', distance: ind.distance })}</span>
                           <span>₹{Number(ind.price_offered_per_ton)}/ton</span>
-                          <span>🚚 ₹{ind.transportCost.toLocaleString()}</span>
-                          <span className="text-success font-medium">Net: ₹{ind.netProfit.toLocaleString()}</span>
+                          <span>🚚 {t('listing.transportCost', { ns: 'farmer', value: `₹${ind.transportCost.toLocaleString()}` })}</span>
+                          <span className="text-success font-medium">{t('listing.netProfit', { ns: 'farmer', value: `₹${ind.netProfit.toLocaleString()}` })}</span>
                         </div>
                       </div>
                       <button
@@ -308,7 +312,7 @@ const FarmerListResidue = () => {
                             : 'bg-primary text-primary-foreground hover:bg-primary/90'
                         }`}
                       >
-                        {sentRequests.includes(ind.id) ? <><CheckCircle className="w-3 h-3" /> Sent</> : <><Send className="w-3 h-3" /> Send Request</>}
+                        {sentRequests.includes(ind.id) ? <><CheckCircle className="w-3 h-3" /> {t('listing.sent', { ns: 'farmer' })}</> : <><Send className="w-3 h-3" /> {t('listing.sendRequest', { ns: 'farmer' })}</>}
                       </button>
                     </div>
                     <ClusterSavings isClusterEligible={ind.isCluster} originalCost={ind.originalCost} distance={ind.distance} />

@@ -5,9 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Wheat, Loader2, ShoppingCart, MapPin } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { calculateDistance, TRANSPORT_RATE, CLUSTER_RADIUS_KM, CLUSTER_DISCOUNT } from '@/data/mockData';
+import { useTranslation } from 'react-i18next';
 
 const IndustryBrowse = () => {
   const { user } = useAuth();
+  const { t } = useTranslation(['common', 'industry']);
   const [availableListings, setAvailableListings] = useState<any[]>([]);
   const [industryProfile, setIndustryProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ const IndustryBrowse = () => {
 
   const handleBuyListing = async (listing: any) => {
     if (!user?.id || !industryProfile) {
-      toast({ title: 'Profile missing', description: 'Please complete your industry profile in Settings first.', variant: 'destructive' });
+      toast({ title: t('browse.profileMissingTitle', { ns: 'industry' }), description: t('browse.profileMissingDescription', { ns: 'industry' }), variant: 'destructive' });
       return;
     }
 
@@ -40,7 +42,7 @@ const IndustryBrowse = () => {
       .maybeSingle();
 
     if (existingRequest) {
-      toast({ title: 'Request already exists', description: 'You already have an active request for this listing.' });
+      toast({ title: t('browse.requestExistsTitle', { ns: 'industry' }), description: t('browse.requestExistsDescription', { ns: 'industry' }) });
       return;
     }
 
@@ -77,12 +79,12 @@ const IndustryBrowse = () => {
     });
 
     if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: t('browse.errorTitle', { ns: 'industry' }), description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Purchase Request Sent!', description: `Request sent for ${qty}t of ${listing.crop_type}` });
+      toast({ title: t('browse.requestSentTitle', { ns: 'industry' }), description: t('browse.requestSentDescription', { ns: 'industry', quantity: qty, cropType: listing.crop_type }) });
       await supabase.from('notifications').insert({
         user_id: listing.farmer_id,
-        message: `${user.companyName || 'An industry'} wants to buy ${qty}t of ${listing.crop_type}!`,
+        message: t('browse.notificationMessage', { ns: 'industry', company: user.companyName || t('roles.industry', { ns: 'common' }), quantity: qty, cropType: listing.crop_type }),
         type: 'success',
       });
       fetchData();
@@ -96,12 +98,12 @@ const IndustryBrowse = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold">Browse Available Listings</h2>
+        <h2 className="text-2xl font-bold">{t('browse.title', { ns: 'industry' })}</h2>
 
         {availableListings.length === 0 ? (
           <div className="bg-card rounded-xl p-12 shadow-card text-center">
             <Wheat className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">No available listings at this time. Check back later!</p>
+            <p className="text-sm text-muted-foreground">{t('browse.empty', { ns: 'industry' })}</p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
@@ -114,30 +116,30 @@ const IndustryBrowse = () => {
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <p className="font-semibold text-sm">{l.crop_type} — {Number(l.quantity)} tons</p>
-                      <p className="text-xs text-muted-foreground">₹{Number(l.adjusted_price_per_ton)}/ton • Total: ₹{Number(l.total_value).toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">₹{Number(l.adjusted_price_per_ton)}/ton • {t('browse.total', { ns: 'industry', value: `₹${Number(l.total_value).toLocaleString()}` })}</p>
                     </div>
                     {l.quality_grade && (
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                         l.quality_grade === 'A' ? 'bg-success/15 text-success' :
                         l.quality_grade === 'B' ? 'bg-warning/15 text-warning' :
                         'bg-destructive/15 text-destructive'
-                      }`}>Grade {l.quality_grade}</span>
+                      }`}>{t('browse.grade', { ns: 'industry', grade: l.quality_grade })}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
                     {l.address && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {l.address}</span>}
-                    {dist !== null && <span>📍 {dist} km away</span>}
-                    {l.moisture_level && <span>💧 {Number(l.moisture_level)}% moisture</span>}
-                    {l.ai_confidence && <span>🤖 {Number(l.ai_confidence)}% AI conf.</span>}
+                    {dist !== null && <span>📍 {t('browse.distanceAway', { ns: 'industry', distance: dist })}</span>}
+                    {l.moisture_level && <span>💧 {t('browse.moisture', { ns: 'industry', value: Number(l.moisture_level) })}</span>}
+                    {l.ai_confidence && <span>🤖 {t('browse.aiConfidence', { ns: 'industry', value: Number(l.ai_confidence) })}</span>}
                   </div>
                   {l.image_url && (
-                    <img src={l.image_url} alt="Crop residue" className="w-full h-32 object-cover rounded-lg mb-3" />
+                    <img src={l.image_url} alt={t('browse.cropResidueAlt', { ns: 'industry' })} className="w-full h-32 object-cover rounded-lg mb-3" />
                   )}
                   <button
                     onClick={() => handleBuyListing(l)}
                     className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-1.5"
                   >
-                    <ShoppingCart className="w-3.5 h-3.5" /> Send Purchase Request
+                    <ShoppingCart className="w-3.5 h-3.5" /> {t('browse.sendRequest', { ns: 'industry' })}
                   </button>
                 </div>
               );

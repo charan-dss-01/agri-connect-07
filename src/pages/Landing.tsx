@@ -1,15 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Leaf, ArrowRight, Factory, Wheat, BarChart3, Sprout, Recycle, TrendingUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { fallbackLanguage, languageLocales } from '@/i18n/resources';
 
-const features = [
-  { icon: Wheat, title: 'Farmers', desc: 'List crop residue and connect with buyers instantly' },
-  { icon: Factory, title: 'Industries', desc: 'Source sustainable biomass at competitive prices' },
-  { icon: BarChart3, title: 'Analytics', desc: 'Track impact with real-time pollution reduction data' },
-];
-
-// Animated count-up hook
 function useCountUp(target: number, duration = 1200) {
   const [value, setValue] = useState(0);
   const prevTarget = useRef(0);
@@ -23,11 +19,11 @@ function useCountUp(target: number, duration = 1200) {
     const tick = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setValue(Math.round(start + (target - start) * eased));
       if (progress < 1) requestAnimationFrame(tick);
     };
+
     requestAnimationFrame(tick);
   }, [target, duration]);
 
@@ -43,6 +39,9 @@ interface StatData {
 
 const Landing = () => {
   const [raw, setRaw] = useState<StatData>({ farmers: 0, industries: 0, biomass: 0, co2: 0 });
+  const { t, i18n } = useTranslation(['common', 'landing']);
+  const activeLanguage = ((i18n.resolvedLanguage ?? fallbackLanguage).split('-')[0] as keyof typeof languageLocales);
+  const locale = languageLocales[activeLanguage] ?? languageLocales.en;
 
   const fetchStats = useCallback(async () => {
     const { data, error } = await supabase.rpc('get_public_stats');
@@ -60,7 +59,6 @@ const Landing = () => {
   useEffect(() => {
     fetchStats();
 
-    // Real-time subscriptions for live updates
     const channel = supabase
       .channel('homepage-stats')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchStats())
@@ -68,7 +66,9 @@ const Landing = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchStats())
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchStats]);
 
   const farmersAnimated = useCountUp(raw.farmers);
@@ -76,106 +76,122 @@ const Landing = () => {
   const biomassAnimated = useCountUp(raw.biomass);
   const co2Animated = useCountUp(raw.co2);
 
+  const features = [
+    {
+      icon: Wheat,
+      title: t('features.farmer.title', { ns: 'landing' }),
+      desc: t('features.farmer.description', { ns: 'landing' }),
+    },
+    {
+      icon: Factory,
+      title: t('features.industry.title', { ns: 'landing' }),
+      desc: t('features.industry.description', { ns: 'landing' }),
+    },
+    {
+      icon: BarChart3,
+      title: t('features.analytics.title', { ns: 'landing' }),
+      desc: t('features.analytics.description', { ns: 'landing' }),
+    },
+  ];
+
   const stats = [
-    { value: farmersAnimated > 0 ? `${farmersAnimated}+` : '0', label: 'Farmers Registered', icon: Sprout },
-    { value: industriesAnimated > 0 ? `${industriesAnimated}+` : '0', label: 'Industries Connected', icon: Factory },
-    { value: biomassAnimated > 0 ? biomassAnimated.toLocaleString() : '0', label: 'Tons Biomass Traded', icon: Recycle },
-    { value: co2Animated > 0 ? `${co2Animated}` : '0', label: 'Tons CO₂ Saved', icon: TrendingUp },
+    { value: farmersAnimated > 0 ? `${farmersAnimated}+` : '0', label: t('stats.farmersRegistered', { ns: 'landing' }), icon: Sprout },
+    { value: industriesAnimated > 0 ? `${industriesAnimated}+` : '0', label: t('stats.industriesConnected', { ns: 'landing' }), icon: Factory },
+    { value: biomassAnimated > 0 ? biomassAnimated.toLocaleString(locale) : '0', label: t('stats.tonsBiomassTraded', { ns: 'landing' }), icon: Recycle },
+    { value: co2Animated > 0 ? `${co2Animated}` : '0', label: t('stats.tonsCo2Saved', { ns: 'landing' }), icon: TrendingUp },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navbar */}
-      <nav className="flex items-center justify-between px-6 md:px-12 py-4 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-sm md:px-12">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-            <Leaf className="w-5 h-5 text-primary-foreground" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+            <Leaf className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-bold text-lg tracking-tight">AgriConnect</span>
+          <span className="text-lg font-bold tracking-tight">{t('brand.name', { ns: 'common' })}</span>
         </div>
         <div className="flex items-center gap-3">
-          <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-4 py-2">
-            Login
+          <LanguageSwitcher />
+          <Link to="/login" className="px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+            {t('navbar.login', { ns: 'landing' })}
           </Link>
-          <Link to="/login?mode=register" className="text-sm font-medium bg-primary text-primary-foreground px-5 py-2 rounded-lg hover:bg-primary/90 transition-colors">
-            Get Started
+          <Link to="/login?mode=register" className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+            {t('navbar.getStarted', { ns: 'landing' })}
           </Link>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="gradient-hero px-6 md:px-12 py-20 md:py-32">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-primary-foreground/10 border border-primary-foreground/20 rounded-full px-4 py-1.5 mb-6">
-            <Sprout className="w-3.5 h-3.5 text-primary-foreground/80" />
-            <span className="text-xs font-medium text-primary-foreground/80">AI-Powered Crop Residue Exchange</span>
+      <section className="gradient-hero px-6 py-20 md:px-12 md:py-32">
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-4 py-1.5">
+            <Sprout className="h-3.5 w-3.5 text-primary-foreground/80" />
+            <span className="text-xs font-medium text-primary-foreground/80">{t('hero.badge', { ns: 'landing' })}</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground leading-tight mb-6">
-            Turn Stubble Into
-            <span className="block text-accent">Sustainable Revenue</span>
+          <h1 className="mb-6 text-4xl font-bold leading-tight text-primary-foreground md:text-6xl">
+            {t('hero.titleLineOne', { ns: 'landing' })}
+            <span className="block text-accent">{t('hero.titleLineTwo', { ns: 'landing' })}</span>
           </h1>
-          <p className="text-lg md:text-xl text-primary-foreground/70 max-w-2xl mx-auto mb-10">
-            Connect farmers with industries that need biomass. Reduce pollution, increase income, and build a cleaner future — all on one platform.
+          <p className="mx-auto mb-10 max-w-2xl text-lg text-primary-foreground/70 md:text-xl">
+            {t('hero.description', { ns: 'landing' })}
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               to="/login?mode=register&role=farmer"
-              className="flex items-center gap-2 bg-accent text-accent-foreground font-semibold px-8 py-3.5 rounded-xl hover:brightness-110 transition-all shadow-elevated text-sm"
+              className="flex items-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-sm font-semibold text-accent-foreground shadow-elevated transition-all hover:brightness-110"
             >
-              I'm a Farmer <ArrowRight className="w-4 h-4" />
+              {t('hero.farmerCta', { ns: 'landing' })} <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               to="/login?mode=register&role=industry"
-              className="flex items-center gap-2 bg-primary-foreground/10 border border-primary-foreground/30 text-primary-foreground font-semibold px-8 py-3.5 rounded-xl hover:bg-primary-foreground/20 transition-all text-sm"
+              className="flex items-center gap-2 rounded-xl border border-primary-foreground/30 bg-primary-foreground/10 px-8 py-3.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-foreground/20"
             >
-              I'm an Industry <ArrowRight className="w-4 h-4" />
+              {t('hero.industryCta', { ns: 'landing' })} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Stats with animated counters */}
-      <section className="px-6 md:px-12 -mt-12 relative z-10">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
-          {stats.map((s, i) => (
-            <div key={i} className="bg-card rounded-xl p-5 shadow-card text-center animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
-              <s.icon className="w-6 h-6 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground tabular-nums">{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-              <div className="w-1 h-1 rounded-full bg-success mx-auto mt-2 animate-pulse" title="Live" />
+      <section className="relative z-10 -mt-12 px-6 md:px-12">
+        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-4 md:grid-cols-4">
+          {stats.map((stat, index) => (
+            <div key={index} className="animate-fade-in rounded-xl bg-card p-5 text-center shadow-card" style={{ animationDelay: `${index * 100}ms` }}>
+              <stat.icon className="mx-auto mb-2 h-6 w-6 text-primary" />
+              <p className="tabular-nums text-2xl font-bold text-foreground">{stat.value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{stat.label}</p>
+              <div className="mx-auto mt-2 h-1 w-1 animate-pulse rounded-full bg-success" title={t('stats.live', { ns: 'landing' })} />
             </div>
           ))}
         </div>
       </section>
 
-      {/* Features */}
-      <section className="px-6 md:px-12 py-20">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">How It Works</h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-lg mx-auto">
-            A simple three-step process to convert agricultural waste into valuable resources.
+      <section className="px-6 py-20 md:px-12">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="mb-4 text-center text-3xl font-bold">{t('features.title', { ns: 'landing' })}</h2>
+          <p className="mx-auto mb-12 max-w-lg text-center text-muted-foreground">
+            {t('features.description', { ns: 'landing' })}
           </p>
-          <div className="grid md:grid-cols-3 gap-6">
-            {features.map((f, i) => (
-              <div key={i} className="bg-card rounded-xl p-6 shadow-card hover:shadow-elevated transition-shadow animate-fade-in" style={{ animationDelay: `${i * 150}ms` }}>
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <f.icon className="w-6 h-6 text-primary" />
+          <div className="grid gap-6 md:grid-cols-3">
+            {features.map((feature, index) => (
+              <div key={index} className="animate-fade-in rounded-xl bg-card p-6 shadow-card transition-shadow hover:shadow-elevated" style={{ animationDelay: `${index * 150}ms` }}>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                  <feature.icon className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground">{f.desc}</p>
+                <h3 className="mb-2 text-lg font-semibold">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border px-6 md:px-12 py-8 text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <Leaf className="w-4 h-4 text-primary" />
-          <span className="font-semibold text-sm">AgriConnect</span>
+      <footer className="border-t border-border px-6 py-8 text-center md:px-12">
+        <div className="mb-2 flex items-center justify-center gap-2">
+          <Leaf className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold">{t('brand.name', { ns: 'common' })}</span>
         </div>
-        <p className="text-xs text-muted-foreground">© 2026 AgriConnect. Building a sustainable agricultural future.</p>
+        <p className="text-xs text-muted-foreground">
+          &copy; {new Date().getFullYear()} {t('brand.name', { ns: 'common' })}. {t('footer.caption', { ns: 'landing' })}
+        </p>
       </footer>
     </div>
   );

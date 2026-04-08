@@ -3,8 +3,10 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart3, Search, Loader2, Calendar, Leaf, IndianRupee, Truck, Users } from 'lucide-react';
 import TransactionTimeline from '@/components/TransactionTimeline';
+import { useTranslation } from 'react-i18next';
 
 const StatusBadge = ({ status }: { status: string }) => {
+  const { t } = useTranslation(['admin']);
   const map: Record<string, string> = {
     pending: 'bg-warning/15 text-warning',
     accepted: 'bg-info/15 text-info',
@@ -13,7 +15,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${map[status] || ''}`}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {t(`transactions.statusLabels.${status}`, { ns: 'admin' })}
     </span>
   );
 };
@@ -23,6 +25,7 @@ interface ProfileMap {
 }
 
 const AdminTransactions = () => {
+  const { t } = useTranslation(['common', 'admin']);
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<ProfileMap>({});
@@ -91,20 +94,20 @@ const AdminTransactions = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">All Transactions</h2>
+          <h2 className="text-2xl font-bold">{t('transactions.title', { ns: 'admin' })}</h2>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <BarChart3 className="w-4 h-4" />
-            <span>{transactions.length} total</span>
+            <span>{t('transactions.total', { ns: 'admin', count: transactions.length })}</span>
           </div>
         </div>
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { icon: BarChart3, label: 'Total Transactions', value: transactions.length.toString(), color: 'text-primary' },
-            { icon: IndianRupee, label: 'Total Value', value: `₹${totalValue.toLocaleString()}`, color: 'text-success' },
-            { icon: Truck, label: 'Biomass Traded', value: `${totalBiomass}t`, color: 'text-info' },
-            { icon: Leaf, label: 'CO₂ Saved', value: `${(totalCarbon / 1000).toFixed(1)}t`, color: 'text-primary' },
+            { icon: BarChart3, label: t('transactions.summary.totalTransactions', { ns: 'admin' }), value: transactions.length.toString(), color: 'text-primary' },
+            { icon: IndianRupee, label: t('transactions.summary.totalValue', { ns: 'admin' }), value: `₹${totalValue.toLocaleString()}`, color: 'text-success' },
+            { icon: Truck, label: t('transactions.summary.biomassTraded', { ns: 'admin' }), value: `${totalBiomass}t`, color: 'text-info' },
+            { icon: Leaf, label: t('transactions.summary.co2Saved', { ns: 'admin' }), value: `${(totalCarbon / 1000).toFixed(1)}t`, color: 'text-primary' },
           ].map((s, i) => (
             <div key={i} className="bg-card rounded-xl p-4 shadow-card">
               <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
@@ -122,7 +125,7 @@ const AdminTransactions = () => {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search by crop, farmer, industry, or ID..."
+              placeholder={t('transactions.searchPlaceholder', { ns: 'admin' })}
               className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -135,7 +138,7 @@ const AdminTransactions = () => {
                   statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'
                 }`}
               >
-                {s.charAt(0).toUpperCase() + s.slice(1)} ({statusCounts[s]})
+                {t(`transactions.filters.${s}`, { ns: 'admin' })} ({statusCounts[s]})
               </button>
             ))}
           </div>
@@ -146,13 +149,13 @@ const AdminTransactions = () => {
           {filtered.length === 0 ? (
             <div className="text-center py-12">
               <BarChart3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No transactions match your filters.</p>
+              <p className="text-sm text-muted-foreground">{t('transactions.noMatch', { ns: 'admin' })}</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
               {filtered.map(t => {
-                const farmerName = profiles[t.farmer_id]?.name || 'Unknown Farmer';
-                const industryName = profiles[t.industry_id]?.companyName || profiles[t.industry_id]?.name || 'Unknown Industry';
+                const farmerName = profiles[t.farmer_id]?.name || t('transactions.unknownFarmer', { ns: 'admin' });
+                const industryName = profiles[t.industry_id]?.companyName || profiles[t.industry_id]?.name || t('transactions.unknownIndustry', { ns: 'admin' });
 
                 return (
                   <div key={t.id} className="p-4 hover:bg-muted/30 transition-colors">
@@ -163,7 +166,7 @@ const AdminTransactions = () => {
                           <StatusBadge status={t.status} />
                           {t.cluster_eligible && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success font-medium">
-                              <Users className="w-2.5 h-2.5 inline mr-0.5" />Cluster
+                              <Users className="w-2.5 h-2.5 inline mr-0.5" />{t('transactions.cluster', { ns: 'admin' })}
                             </span>
                           )}
                         </div>
@@ -173,11 +176,11 @@ const AdminTransactions = () => {
                         </div>
                         <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                           <span>₹{Number(t.price_per_ton)}/ton</span>
-                          <span>Total: ₹{Number(t.total_value).toLocaleString()}</span>
+                          <span>{t('transactions.total', { ns: 'admin', value: `₹${Number(t.total_value).toLocaleString()}` })}</span>
                           <span>🚚 {Number(t.transport_distance || 0)} km</span>
-                          <span>Transport: ₹{Number(t.transport_cost || 0).toLocaleString()}</span>
+                          <span>{t('transactions.transport', { ns: 'admin', value: `₹${Number(t.transport_cost || 0).toLocaleString()}` })}</span>
                           {Number(t.transport_savings) > 0 && (
-                            <span className="text-success">Saved: ₹{Number(t.transport_savings).toLocaleString()}</span>
+                            <span className="text-success">{t('transactions.saved', { ns: 'admin', value: `₹${Number(t.transport_savings).toLocaleString()}` })}</span>
                           )}
                         </div>
                         {t.status === 'completed' && (
@@ -185,12 +188,12 @@ const AdminTransactions = () => {
                             <span className="text-primary flex items-center gap-1">
                               <Leaf className="w-3 h-3" /> {Number(t.carbon_saved || 0).toLocaleString()} kg CO₂
                             </span>
-                            <span className="text-success">Credits: {Number(t.credit_points || 0)}</span>
+                            <span className="text-success">{t('dashboard.credits', { ns: 'admin', count: Number(t.credit_points || 0) })}</span>
                           </div>
                         )}
                         {t.pickup_date && (
                           <p className="text-xs text-info mt-1 flex items-center gap-1">
-                            <Calendar className="w-3 h-3" /> Pickup: {t.pickup_date}
+                            <Calendar className="w-3 h-3" /> {t('dashboard.pickup', { ns: 'admin', date: t.pickup_date })}
                           </p>
                         )}
                       </div>
@@ -204,7 +207,7 @@ const AdminTransactions = () => {
                       onClick={() => setExpandedTx(expandedTx === t.id ? null : t.id)}
                       className="text-[10px] text-primary mt-2 hover:underline"
                     >
-                      {expandedTx === t.id ? 'Hide' : 'Show'} Timeline
+                      {expandedTx === t.id ? t('dashboard.hideTimeline', { ns: 'admin' }) : t('dashboard.showTimeline', { ns: 'admin' })}
                     </button>
                     {expandedTx === t.id && (
                       <div className="mt-2 pt-2 border-t border-border">

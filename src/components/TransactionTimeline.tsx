@@ -1,13 +1,6 @@
-import { CheckCircle, Clock, Truck, Factory, Wheat, Package } from 'lucide-react';
+import { CheckCircle, Truck, Factory, Wheat, Package } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Transaction } from '@/data/mockData';
-
-const steps = [
-  { key: 'listed', label: 'Listed', icon: Wheat },
-  { key: 'matched', label: 'Industry Matched', icon: Factory },
-  { key: 'accepted', label: 'Accepted', icon: CheckCircle },
-  { key: 'pickup', label: 'Pickup Scheduled', icon: Truck },
-  { key: 'completed', label: 'Completed', icon: Package },
-];
 
 function getActiveStep(status: string, hasPickup: boolean): number {
   if (status === 'completed') return 5;
@@ -19,8 +12,17 @@ function getActiveStep(status: string, hasPickup: boolean): number {
 }
 
 export default function TransactionTimeline({ transaction }: { transaction: Transaction }) {
+  const { t } = useTranslation('farmer');
   const active = getActiveStep(transaction.status, !!transaction.pickupDate);
   const isRejected = transaction.status === 'rejected';
+
+  const steps = [
+    { key: 'listed', label: t('timeline.listed'), icon: Wheat },
+    { key: 'matched', label: t('timeline.matched'), icon: Factory },
+    { key: 'accepted', label: t('timeline.accepted'), icon: CheckCircle },
+    { key: 'pickup', label: t('timeline.pickup'), icon: Truck },
+    { key: 'completed', label: t('timeline.completed'), icon: Package },
+  ];
 
   return (
     <div className="flex items-center gap-1 w-full overflow-x-auto py-2">

@@ -1,0 +1,124 @@
+AgriConnect Work Log
+Date: 2026-04-07
+
+Summary
+- Reviewed the full project structure and identified bugs, edge cases, dead files, and repo hygiene issues.
+- Removed visible Lovable branding/traces while preserving app functionality.
+- Hardened auth and seed-related logic.
+- Improved environment/config safety for pushing the repo.
+- Cleaned several unused/demo files and exports.
+- Verified the app with build and test runs, then pushed the changes to GitHub.
+
+Major Changes Completed
+
+1. Project review and cleanup
+- Mapped the app structure across frontend pages, shared components, contexts, Supabase client/types, migrations, and edge functions.
+- Identified dead or demo-oriented files and removed unused ones:
+  - src/components/DemoToggle.tsx
+  - src/hooks/useUserRole.ts
+  - src/App.css
+  - src/pages/Index.tsx
+  - public/placeholder.svg
+- Trimmed unused demo/sample exports from src/data/mockData.ts.
+
+2. Removed Lovable traces
+- Removed lovable-tagger from the project and Vite config.
+- Replaced the default README with a project-specific README.
+- Updated index.html title/meta tags from Lovable placeholders to AgriConnect branding.
+- Replaced the browser/tab favicon with a project-owned SVG:
+  - public/agriconnect-favicon.svg
+- Removed the stray generated Vite timestamp artifact.
+
+3. Authentication and signup hardening
+- Updated src/contexts/AuthContext.tsx:
+  - Added blocked-user handling using profiles.approved.
+  - Prevented blocked users from staying signed in.
+  - Improved auth/session bootstrap flow.
+  - Kept role/profile loading consistent.
+- Updated src/pages/Login.tsx:
+  - Fixed misleading signup behavior when email confirmation is required.
+  - Kept login redirect flow tied to actual role lookup.
+
+4. AI analysis safety improvements
+- Updated src/components/AIAnalysisPanel.tsx:
+  - Removed random AI fallback results.
+  - Replaced them with deterministic safe fallback values.
+- Updated supabase/functions/analyze-crop/index.ts:
+  - Switched from Lovable-specific gateway naming to generic AI gateway env vars.
+  - Aligned the function to OpenAI chat completions usage.
+  - Set the model to gpt-4.1-mini.
+  - Kept fallback behavior deterministic.
+
+5. Supabase security and repo safety
+- Added/updated .gitignore to ignore .env files.
+- Created example env files for safe sharing:
+  - .env.example
+  - supabase/functions/.env.example
+- Confirmed supabase/functions/.env is ignored.
+- Untracked the root .env from Git so it will not be pushed again.
+- Added Supabase notification policy hardening migration:
+  - supabase/migrations/20260407194500_harden_notification_inserts.sql
+
+6. Seed/admin function hardening
+- Updated supabase/functions/seed-admin/index.ts:
+  - Removed hardcoded admin password.
+  - Added x-seed-secret requirement.
+  - Switched to env-driven password handling.
+- Updated supabase/functions/seed-test-data/index.ts:
+  - Removed hardcoded credentials from output.
+  - Added x-seed-secret requirement.
+  - Aligned role handling with the schema.
+  - Replaced invalid/undesired sample values.
+
+7. Request flow improvements
+- Updated src/pages/FarmerListResidue.tsx:
+  - Prevented duplicate requests to the same industry for the same listing.
+- Updated src/pages/IndustryBrowse.tsx:
+  - Prevented duplicate industry requests for the same listing.
+
+8. Editor/runtime support
+- Added Deno editor configuration for Supabase edge functions:
+  - .vscode/extensions.json
+  - .vscode/settings.json
+  - supabase/functions/deno.json
+- This was done to reduce false red underlines in VS Code for Deno/Supabase function code.
+
+Validation Performed
+- npm install --legacy-peer-deps
+- npm run build
+- npm test
+- git status / git ignore checks for env safety
+- Verified the local app at http://localhost:8080
+
+Validation Outcome
+- Build passed successfully.
+- Tests passed, but only a placeholder Vitest test currently exists.
+- Lint still reports broader pre-existing issues (mainly typing/any usage, some generated UI typing, and Tailwind config import style).
+
+Git / Push Status
+- Commit created:
+  - 9bfd2a9
+  - "Clean project branding and harden app config"
+- Pushed to GitHub branch:
+  - haribranch
+
+Key Files Added
+- WORKLOG_2026-04-07.txt
+- .env.example
+- supabase/functions/.env.example
+- .vscode/extensions.json
+- .vscode/settings.json
+- public/agriconnect-favicon.svg
+- supabase/functions/deno.json
+- supabase/migrations/20260407194500_harden_notification_inserts.sql
+
+Important Follow-ups
+- Rotate any previously exposed API keys if needed.
+- If using OpenAI for the analyze-crop function, make sure the following are configured in Supabase function env/secrets:
+  - AI_GATEWAY_URL
+  - AI_GATEWAY_API_KEY
+- Consider a second cleanup pass for:
+  - remaining lint issues
+  - large bundle size / code splitting
+  - package manager standardization (package-lock.json vs bun.lockb)
+  - stronger database-level enforcement for blocked users if required

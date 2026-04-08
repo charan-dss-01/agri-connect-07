@@ -4,6 +4,8 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Leaf, LogOut, Home, BarChart3, Users, Factory, Wheat, Menu, Settings, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import NotificationPanel from '@/components/NotificationPanel';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -14,6 +16,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const { t } = useTranslation('common');
 
   const handleLogout = async () => {
     await logout();
@@ -22,23 +25,23 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const navItems = user?.role === 'farmer'
     ? [
-        { icon: Home, label: 'Dashboard', path: '/farmer' },
-        { icon: Wheat, label: 'List Residue', path: '/farmer/list' },
-        { icon: BarChart3, label: 'My Requests', path: '/farmer/requests' },
-        { icon: Settings, label: 'Settings', path: '/farmer/settings' },
+        { icon: Home, label: t('navigation.dashboard'), path: '/farmer' },
+        { icon: Wheat, label: t('navigation.listResidue'), path: '/farmer/list' },
+        { icon: BarChart3, label: t('navigation.myRequests'), path: '/farmer/requests' },
+        { icon: Settings, label: t('navigation.settings'), path: '/farmer/settings' },
       ]
     : user?.role === 'industry'
     ? [
-        { icon: Home, label: 'Dashboard', path: '/industry' },
-        { icon: ShoppingCart, label: 'Browse Listings', path: '/industry/browse' },
-        { icon: Factory, label: 'My Requests', path: '/industry/requests' },
-        { icon: Settings, label: 'Settings', path: '/industry/settings' },
+        { icon: Home, label: t('navigation.dashboard'), path: '/industry' },
+        { icon: ShoppingCart, label: t('navigation.browseListings'), path: '/industry/browse' },
+        { icon: Factory, label: t('navigation.myRequests'), path: '/industry/requests' },
+        { icon: Settings, label: t('navigation.settings'), path: '/industry/settings' },
       ]
     : [
-        { icon: Home, label: 'Dashboard', path: '/admin' },
-        { icon: Users, label: 'Users', path: '/admin/users' },
-        { icon: BarChart3, label: 'Transactions', path: '/admin/transactions' },
-        { icon: Settings, label: 'Settings', path: '/admin/settings' },
+        { icon: Home, label: t('navigation.dashboard'), path: '/admin' },
+        { icon: Users, label: t('navigation.users'), path: '/admin/users' },
+        { icon: BarChart3, label: t('navigation.transactions'), path: '/admin/transactions' },
+        { icon: Settings, label: t('navigation.settings'), path: '/admin/settings' },
       ];
 
   return (
@@ -53,8 +56,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <Leaf className="w-5 h-5 text-sidebar-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-sidebar-foreground tracking-tight">AgriConnect</h1>
-            <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-widest">AI Crop Exchange</p>
+            <h1 className="text-base font-bold text-sidebar-foreground tracking-tight">{t('brand.name')}</h1>
+            <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-widest">{t('brand.tagline')}</p>
           </div>
         </div>
 
@@ -82,7 +85,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors text-sm"
           >
             <LogOut className="w-4 h-4" />
-            Logout
+            {t('navigation.logout')}
           </button>
         </div>
       </aside>
@@ -94,11 +97,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <Menu className="w-5 h-5" />
             </button>
             <div>
-              <p className="text-xs text-muted-foreground">Welcome back,</p>
+              <p className="text-xs text-muted-foreground">{t('header.welcomeBack')}</p>
               <p className="font-semibold text-sm">{user?.name || user?.email}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <LanguageSwitcher compact />
             <NotificationPanel />
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
               {(user?.name || user?.email || '?').charAt(0).toUpperCase()}

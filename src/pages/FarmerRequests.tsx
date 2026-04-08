@@ -4,8 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Wheat, CheckCircle, Clock, XCircle, Loader2 } from 'lucide-react';
 import TransactionTimeline from '@/components/TransactionTimeline';
+import { useTranslation } from 'react-i18next';
 
 const StatusBadge = ({ status }: { status: string }) => {
+  const { t } = useTranslation(['farmer']);
   const map: Record<string, string> = {
     pending: 'bg-warning/15 text-warning',
     accepted: 'bg-info/15 text-info',
@@ -16,7 +18,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   const Icon = icons[status] || Clock;
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${map[status] || ''}`}>
-      <Icon className="w-3 h-3" /> {status.charAt(0).toUpperCase() + status.slice(1)}
+      <Icon className="w-3 h-3" /> {t(`statuses.${status}`, { ns: 'farmer' })}
     </span>
   );
 };
@@ -27,6 +29,7 @@ const FarmerRequests = () => {
   const [expandedTx, setExpandedTx] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const { t: translate } = useTranslation(['common', 'farmer']);
 
   const fetchData = useCallback(async () => {
     if (!user?.id) return;
@@ -64,7 +67,7 @@ const FarmerRequests = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold">My Requests</h2>
+        <h2 className="text-2xl font-bold">{translate('requests.title', { ns: 'farmer' })}</h2>
 
         {/* Filter tabs */}
         <div className="flex gap-2 flex-wrap">
@@ -78,7 +81,7 @@ const FarmerRequests = () => {
                   : 'bg-muted text-muted-foreground hover:bg-secondary'
               }`}
             >
-              {s.charAt(0).toUpperCase() + s.slice(1)} ({statusCounts[s]})
+              {translate(`requests.filters.${s}`, { ns: 'farmer' })} ({statusCounts[s]})
             </button>
           ))}
         </div>
@@ -86,23 +89,23 @@ const FarmerRequests = () => {
         {/* Summary stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-card rounded-xl p-4 shadow-card">
-            <p className="text-xs text-muted-foreground">Total Requests</p>
+            <p className="text-xs text-muted-foreground">{translate('requests.stats.totalRequests', { ns: 'farmer' })}</p>
             <p className="text-xl font-bold">{myTransactions.length}</p>
           </div>
           <div className="bg-card rounded-xl p-4 shadow-card">
-            <p className="text-xs text-muted-foreground">Total Earnings</p>
+            <p className="text-xs text-muted-foreground">{translate('requests.stats.totalEarnings', { ns: 'farmer' })}</p>
             <p className="text-xl font-bold text-success">
               ₹{myTransactions.filter(t => t.status === 'completed').reduce((s, t) => s + (Number(t.net_profit) || 0), 0).toLocaleString()}
             </p>
           </div>
           <div className="bg-card rounded-xl p-4 shadow-card">
-            <p className="text-xs text-muted-foreground">Biomass Traded</p>
+            <p className="text-xs text-muted-foreground">{translate('requests.stats.biomassTraded', { ns: 'farmer' })}</p>
             <p className="text-xl font-bold">
               {myTransactions.filter(t => t.status === 'completed').reduce((s, t) => s + Number(t.quantity), 0)}t
             </p>
           </div>
           <div className="bg-card rounded-xl p-4 shadow-card">
-            <p className="text-xs text-muted-foreground">CO₂ Saved</p>
+            <p className="text-xs text-muted-foreground">{translate('requests.stats.co2Saved', { ns: 'farmer' })}</p>
             <p className="text-xl font-bold text-primary">
               {myTransactions.filter(t => t.status === 'completed').reduce((s, t) => s + (Number(t.carbon_saved) || 0), 0).toFixed(1)} kg
             </p>
@@ -115,7 +118,7 @@ const FarmerRequests = () => {
             <div className="text-center py-12">
               <Wheat className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">
-                {filter === 'all' ? 'No requests yet. List your crop residue to get started!' : `No ${filter} requests.`}
+                {filter === 'all' ? translate('requests.emptyAll', { ns: 'farmer' }) : translate('requests.emptyFiltered', { ns: 'farmer', status: translate(`requests.filters.${filter}`, { ns: 'farmer' }) })}
               </p>
             </div>
           ) : (
@@ -133,7 +136,7 @@ const FarmerRequests = () => {
                         {Number(t.transport_savings) > 0 && <span className="text-success"> (saved ₹{Number(t.transport_savings).toLocaleString()})</span>}
                       </p>
                       {t.pickup_date && (
-                        <p className="text-xs text-info mt-0.5">📅 Pickup: {t.pickup_date}</p>
+                        <p className="text-xs text-info mt-0.5">📅 {translate('requests.pickup', { ns: 'farmer', date: t.pickup_date })}</p>
                       )}
                     </div>
                     <StatusBadge status={t.status} />
