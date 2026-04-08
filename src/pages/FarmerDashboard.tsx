@@ -50,14 +50,17 @@ const FarmerDashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-2xl font-bold">{t('dashboard.title', { ns: 'farmer' })}</h2>
-          <button
-            onClick={() => navigate('/farmer/list')}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Wheat className="w-4 h-4" /> {t('dashboard.cta', { ns: 'farmer' })}
-          </button>
+          <div className="flex items-center gap-2">
+            <ComplaintDialog />
+            <button
+              onClick={() => navigate('/farmer/list')}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Wheat className="w-4 h-4" /> {t('dashboard.cta', { ns: 'farmer' })}
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
