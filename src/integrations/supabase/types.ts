@@ -20,7 +20,9 @@ export type Database = {
           complainant_id: string
           created_at: string
           id: string
+          points_deducted: number | null
           reason: string
+          resolution: string | null
           status: string
           transaction_id: string | null
         }
@@ -29,7 +31,9 @@ export type Database = {
           complainant_id: string
           created_at?: string
           id?: string
+          points_deducted?: number | null
           reason: string
+          resolution?: string | null
           status?: string
           transaction_id?: string | null
         }
@@ -38,7 +42,9 @@ export type Database = {
           complainant_id?: string
           created_at?: string
           id?: string
+          points_deducted?: number | null
           reason?: string
+          resolution?: string | null
           status?: string
           transaction_id?: string | null
         }
@@ -322,6 +328,45 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_stats: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_activity_date: string | null
+          longest_streak: number
+          total_co2_saved: number
+          total_points: number
+          total_transactions: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number
+          total_co2_saved?: number
+          total_points?: number
+          total_transactions?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number
+          total_co2_saved?: number
+          total_points?: number
+          total_transactions?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
