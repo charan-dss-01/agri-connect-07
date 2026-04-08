@@ -16,6 +16,7 @@ import IndustryRequests from "./pages/IndustryRequests";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminTransactions from "./pages/AdminTransactions";
+import AdminComplaints from "./pages/AdminComplaints";
 import ProfileSettings from "./pages/ProfileSettings";
 import NotFound from "./pages/NotFound";
 
