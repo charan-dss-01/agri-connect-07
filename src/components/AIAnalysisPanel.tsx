@@ -21,7 +21,8 @@ interface AIAnalysisPanelProps {
 }
 
 export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger, imageFile }: AIAnalysisPanelProps) {
-  const { t } = useTranslation(['farmer']);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { t } = useTranslation('farmer') as any;
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AIAnalysisResult | null>(null);
   const [analysisStep, setAnalysisStep] = useState(0);
