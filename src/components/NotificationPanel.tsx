@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Bell, X, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useTranslation } from 'react-i18next';
+import { fallbackLanguage, languageLocales } from '@/i18n/resources';
 
 interface NotificationItem {
   id: string;
@@ -15,6 +17,7 @@ export default function NotificationPanel() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const { t, i18n } = useTranslation('common');
 
   useEffect(() => {
     if (!user?.id) return;
@@ -48,6 +51,8 @@ export default function NotificationPanel() {
   }, [user?.id]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  const activeLanguage = ((i18n.resolvedLanguage ?? fallbackLanguage).split('-')[0] as keyof typeof languageLocales);
+  const locale = languageLocales[activeLanguage] ?? languageLocales.en;
 
   const markRead = async (id: string) => {
     await supabase.from('notifications').update({ read: true }).eq('id', id);
@@ -77,10 +82,10 @@ export default function NotificationPanel() {
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-xl shadow-elevated z-50 animate-scale-in overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h4 className="text-sm font-semibold">Notifications</h4>
+              <h4 className="text-sm font-semibold">{t('notifications.title')}</h4>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
-                  <button onClick={markAllRead} className="text-[10px] text-primary hover:underline">Mark all read</button>
+                  <button onClick={markAllRead} className="text-[10px] text-primary hover:underline">{t('notifications.markAllRead')}</button>
                 )}
                 <button onClick={() => setOpen(false)}>
                   <X className="w-4 h-4 text-muted-foreground" />
@@ -89,7 +94,7 @@ export default function NotificationPanel() {
             </div>
             <div className="max-h-72 overflow-y-auto">
               {notifications.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">No notifications</p>
+                <p className="text-sm text-muted-foreground text-center py-8">{t('notifications.empty')}</p>
               ) : (
                 notifications.map(n => (
                   <div key={n.id} className={`px-4 py-3 border-b border-border/50 flex items-start gap-3 ${!n.read ? 'bg-primary/5' : ''}`}>
@@ -98,7 +103,7 @@ export default function NotificationPanel() {
                     }`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs leading-relaxed">{n.message}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(n.created_at).toLocaleDateString()}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{new Intl.DateTimeFormat(locale).format(new Date(n.created_at))}</p>
                     </div>
                     {!n.read && (
                       <button onClick={() => markRead(n.id)} className="shrink-0 p-1 hover:bg-muted rounded">

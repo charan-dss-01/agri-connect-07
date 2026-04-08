@@ -6,8 +6,10 @@ import { Factory, CheckCircle, XCircle, Clock, Calendar, Loader2 } from 'lucide-
 import TransactionTimeline from '@/components/TransactionTimeline';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 const StatusBadge = ({ status }: { status: string }) => {
+  const { t } = useTranslation(['industry']);
   const map: Record<string, string> = {
     pending: 'bg-warning/15 text-warning',
     accepted: 'bg-info/15 text-info',
@@ -16,7 +18,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${map[status] || ''}`}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {t(`statuses.${status}`, { ns: 'industry' })}
     </span>
   );
 };
@@ -29,6 +31,7 @@ const IndustryRequests = () => {
   const [confirmAction, setConfirmAction] = useState<{ id: string; type: 'accept' | 'reject' | 'complete' } | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const { t: translate } = useTranslation(['common', 'industry']);
 
   const fetchData = useCallback(async () => {
     if (!user?.id) return;
@@ -49,19 +52,19 @@ const IndustryRequests = () => {
       const pickupDate = pickupDates[id] || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
       const { error } = await supabase.from('transactions').update({ status: 'accepted', pickup_date: pickupDate }).eq('id', id);
       if (!error) {
-        toast({ title: 'Request Accepted', description: 'Pickup has been scheduled.' });
+        toast({ title: translate('requests.acceptedToastTitle', { ns: 'industry' }), description: translate('requests.acceptedToastDescription', { ns: 'industry' }) });
         const tx = transactions.find(t => t.id === id);
         if (tx) {
-          await supabase.from('notifications').insert({ user_id: tx.farmer_id, message: `Your sell request has been accepted! Pickup: ${pickupDate}`, type: 'success' });
+          await supabase.from('notifications').insert({ user_id: tx.farmer_id, message: translate('requests.acceptedNotification', { ns: 'industry', date: pickupDate }), type: 'success' });
           if (tx.listing_id) await supabase.from('residue_listings').update({ status: 'pending' }).eq('id', tx.listing_id);
         }
       }
     } else if (type === 'reject') {
       const { error } = await supabase.from('transactions').update({ status: 'rejected' }).eq('id', id);
       if (!error) {
-        toast({ title: 'Request Rejected', variant: 'destructive' });
+        toast({ title: translate('requests.rejectedToastTitle', { ns: 'industry' }), variant: 'destructive' });
         const tx = transactions.find(t => t.id === id);
-        if (tx) await supabase.from('notifications').insert({ user_id: tx.farmer_id, message: 'Your sell request was rejected.', type: 'warning' });
+        if (tx) await supabase.from('notifications').insert({ user_id: tx.farmer_id, message: translate('requests.rejectedNotification', { ns: 'industry' }), type: 'warning' });
       }
     } else {
       const tx = transactions.find(t => t.id === id);
@@ -69,9 +72,9 @@ const IndustryRequests = () => {
       const creditPoints = tx ? Number(tx.quantity) * 10 : 0;
       const { error } = await supabase.from('transactions').update({ status: 'completed', carbon_saved: carbonSaved, credit_points: creditPoints }).eq('id', id);
       if (!error) {
-        toast({ title: 'Transaction Completed!', description: 'Biomass has been received.' });
+        toast({ title: translate('requests.completedToastTitle', { ns: 'industry' }), description: translate('requests.completedToastDescription', { ns: 'industry' }) });
         if (tx) {
-          await supabase.from('notifications').insert({ user_id: tx.farmer_id, message: `Transaction completed! ${Number(tx.quantity)}t biomass received. Carbon credits: ${creditPoints}`, type: 'success' });
+          await supabase.from('notifications').insert({ user_id: tx.farmer_id, message: translate('requests.completedNotification', { ns: 'industry', quantity: Number(tx.quantity), credits: creditPoints }), type: 'success' });
           if (tx.listing_id) await supabase.from('residue_listings').update({ status: 'completed' }).eq('id', tx.listing_id);
         }
       }
@@ -87,10 +90,10 @@ const IndustryRequests = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold">My Requests</h2>
+        <h2 className="text-2xl font-bold">{translate('requests.title', { ns: 'industry' })}</h2>
 
         <div className="flex gap-2 flex-wrap">
-          {['all', 'pending', 'accepted', 'completed', 'rejected'].map(f => (
+          {(['all', 'pending', 'accepted', 'completed', 'rejected'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -98,7 +101,7 @@ const IndustryRequests = () => {
                 filter === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'
               }`}
             >
-              {f.charAt(0).toUpperCase() + f.slice(1)} ({f === 'all' ? transactions.length : transactions.filter(t => t.status === f).length})
+              {translate(`requests.filters.${f}`, { ns: 'industry' })} ({f === 'all' ? transactions.length : transactions.filter(t => t.status === f).length})
             </button>
           ))}
         </div>
@@ -107,7 +110,9 @@ const IndustryRequests = () => {
           {filtered.length === 0 ? (
             <div className="text-center py-12">
               <Factory className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No {filter === 'all' ? '' : filter} requests found.</p>
+              <p className="text-sm text-muted-foreground">
+                {filter === 'all' ? translate('requests.emptyAll', { ns: 'industry' }) : translate('requests.emptyFiltered', { ns: 'industry', status: translate(`requests.filters.${filter}`, { ns: 'industry' }) })}
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -119,19 +124,19 @@ const IndustryRequests = () => {
                         <p className="font-medium">{t.crop_type} — {Number(t.quantity)} tons</p>
                         <StatusBadge status={t.status} />
                         {t.cluster_eligible && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success font-medium">Cluster</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success font-medium">{translate('requests.cluster', { ns: 'industry' })}</span>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        ₹{Number(t.price_per_ton)}/ton • {Number(t.transport_distance || 0)} km away
+                          ₹{Number(t.price_per_ton)}/ton • {translate('requests.distanceAway', { ns: 'industry', distance: Number(t.transport_distance || 0) })}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Total: ₹{Number(t.total_value).toLocaleString()} • Transport: ₹{Number(t.transport_cost || 0).toLocaleString()}
-                        {Number(t.transport_savings) > 0 && <span className="text-success"> (saved ₹{Number(t.transport_savings).toLocaleString()})</span>}
+                          {translate('requests.total', { ns: 'industry', value: `₹${Number(t.total_value).toLocaleString()}` })} • {translate('requests.transport', { ns: 'industry', value: `₹${Number(t.transport_cost || 0).toLocaleString()}` })}
+                          {Number(t.transport_savings) > 0 && <span className="text-success"> ({translate('requests.saved', { ns: 'industry', value: `₹${Number(t.transport_savings).toLocaleString()}` })})</span>}
                       </p>
                       {t.pickup_date && (
                         <p className="text-xs text-info mt-1 flex items-center gap-1">
-                          <Calendar className="w-3 h-3" /> Pickup: {t.pickup_date}
+                            <Calendar className="w-3 h-3" /> {translate('requests.pickup', { ns: 'industry', date: t.pickup_date })}
                         </p>
                       )}
                     </div>
@@ -145,23 +150,23 @@ const IndustryRequests = () => {
                             className="px-2 py-1.5 rounded-lg border border-input bg-background text-xs"
                           />
                           <button onClick={() => setConfirmAction({ id: t.id, type: 'accept' })} className="px-3 py-1.5 rounded-lg bg-success text-success-foreground text-xs font-medium hover:bg-success/90 transition-colors flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" /> Accept
+                            <CheckCircle className="w-3 h-3" /> {translate('requests.accept', { ns: 'industry' })}
                           </button>
                           <button onClick={() => setConfirmAction({ id: t.id, type: 'reject' })} className="px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:bg-destructive/90 transition-colors flex items-center gap-1">
-                            <XCircle className="w-3 h-3" /> Reject
+                            <XCircle className="w-3 h-3" /> {translate('requests.reject', { ns: 'industry' })}
                           </button>
                         </>
                       )}
                       {t.status === 'accepted' && (
                         <button onClick={() => setConfirmAction({ id: t.id, type: 'complete' })} className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors">
-                          Mark Completed
+                          {translate('requests.markCompleted', { ns: 'industry' })}
                         </button>
                       )}
                     </div>
                   </div>
 
                   <button onClick={() => setExpandedTx(expandedTx === t.id ? null : t.id)} className="text-[10px] text-primary mt-2 hover:underline">
-                    {expandedTx === t.id ? 'Hide' : 'Show'} Timeline
+                    {expandedTx === t.id ? translate('requests.hideTimeline', { ns: 'industry' }) : translate('requests.showTimeline', { ns: 'industry' })}
                   </button>
                   {expandedTx === t.id && (
                     <div className="mt-2 pt-2 border-t border-border">
@@ -184,9 +189,9 @@ const IndustryRequests = () => {
 
       <ConfirmDialog
         open={!!confirmAction}
-        title={confirmAction?.type === 'accept' ? 'Accept Request?' : confirmAction?.type === 'reject' ? 'Reject Request?' : 'Mark Completed?'}
-        message={confirmAction?.type === 'accept' ? 'This will schedule a pickup for this request.' : confirmAction?.type === 'reject' ? 'This action cannot be undone.' : 'Confirm that biomass has been received.'}
-        confirmLabel={confirmAction?.type === 'reject' ? 'Reject' : 'Confirm'}
+        title={confirmAction?.type === 'accept' ? translate('requests.confirm.acceptTitle', { ns: 'industry' }) : confirmAction?.type === 'reject' ? translate('requests.confirm.rejectTitle', { ns: 'industry' }) : translate('requests.confirm.completeTitle', { ns: 'industry' })}
+        message={confirmAction?.type === 'accept' ? translate('requests.confirm.acceptMessage', { ns: 'industry' }) : confirmAction?.type === 'reject' ? translate('requests.confirm.rejectMessage', { ns: 'industry' }) : translate('requests.confirm.completeMessage', { ns: 'industry' })}
+        confirmLabel={confirmAction?.type === 'reject' ? translate('requests.confirm.reject', { ns: 'industry' }) : translate('requests.confirm.confirm', { ns: 'industry' })}
         variant={confirmAction?.type === 'reject' ? 'danger' : 'success'}
         onConfirm={doAction}
         onCancel={() => setConfirmAction(null)}

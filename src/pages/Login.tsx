@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Leaf, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Leaf, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -19,39 +21,49 @@ const Login = () => {
   const [submitting, setSubmitting] = useState(false);
   const { login, register } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation(['common', 'auth']);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+
     try {
       if (isRegister) {
         const res = await register({ name, email, password, role, phone, village, companyName });
         if (res.error) {
-          toast({ title: 'Registration failed', description: res.error, variant: 'destructive' });
+          toast({ title: t('toasts.registrationFailed', { ns: 'auth' }), description: res.error, variant: 'destructive' });
           setSubmitting(false);
           return;
         }
+
         if (res.requiresEmailConfirmation) {
           toast({
-            title: 'Check your email',
-            description: 'Your account was created. Confirm your email before signing in.',
+            title: t('toasts.checkEmailTitle', { ns: 'auth' }),
+            description: t('toasts.checkEmailDescription', { ns: 'auth' }),
           });
           setIsRegister(false);
           setSubmitting(false);
           return;
         }
-        toast({ title: 'Account created!', description: 'You are now logged in.' });
+
+        toast({
+          title: t('toasts.accountCreatedTitle', { ns: 'auth' }),
+          description: t('toasts.accountCreatedDescription', { ns: 'auth' }),
+        });
       } else {
         const res = await login(email, password);
         if (res.error) {
-          toast({ title: 'Login failed', description: res.error, variant: 'destructive' });
+          toast({ title: t('toasts.loginFailed', { ns: 'auth' }), description: res.error, variant: 'destructive' });
           setSubmitting(false);
           return;
         }
       }
-      // Small delay to let auth state propagate, then redirect based on actual user role
+
       setTimeout(async () => {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (session?.user) {
           const { data: roleData } = await supabase
             .from('user_roles')
@@ -63,6 +75,7 @@ const Login = () => {
         } else {
           navigate(role === 'farmer' ? '/farmer' : role === 'industry' ? '/industry' : '/admin');
         }
+
         setSubmitting(false);
       }, 500);
     } catch {
@@ -71,62 +84,65 @@ const Login = () => {
   };
 
   const roles: { value: UserRole; label: string }[] = [
-    { value: 'farmer', label: '🌾 Farmer' },
-    { value: 'industry', label: '🏭 Industry' },
-    { value: 'admin', label: '🔧 Admin' },
+    { value: 'farmer', label: t('roles.farmer', { ns: 'common' }) },
+    { value: 'industry', label: t('roles.industry', { ns: 'common' }) },
+    { value: 'admin', label: t('roles.admin', { ns: 'common' }) },
   ];
 
   return (
     <div className="min-h-screen flex">
-      {/* Left panel */}
-      <div className="hidden lg:flex w-1/2 gradient-hero items-center justify-center p-12">
+      <div className="hidden w-1/2 items-center justify-center p-12 lg:flex gradient-hero">
         <div className="max-w-md">
-          <div className="flex items-center gap-2.5 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center">
-              <Leaf className="w-5 h-5 text-primary-foreground" />
+          <div className="mb-8 flex items-center gap-2.5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-foreground/10">
+              <Leaf className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-xl text-primary-foreground">AgriConnect</span>
+            <span className="text-xl font-bold text-primary-foreground">{t('brand.name', { ns: 'common' })}</span>
           </div>
-          <h2 className="text-3xl font-bold text-primary-foreground mb-4">
-            {isRegister ? 'Join the network' : 'Welcome back'}
+          <h2 className="mb-4 text-3xl font-bold text-primary-foreground">
+            {isRegister ? t('panel.joinNetwork', { ns: 'auth' }) : t('panel.welcomeBack', { ns: 'auth' })}
           </h2>
-          <p className="text-primary-foreground/70">
-            Connect with the largest crop residue exchange network. Reduce pollution, increase revenue.
-          </p>
+          <p className="text-primary-foreground/70">{t('panel.description', { ns: 'auth' })}</p>
         </div>
       </div>
 
-      {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-background">
+      <div className="flex flex-1 items-center justify-center bg-background p-6 md:p-12">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Leaf className="w-4 h-4 text-primary-foreground" />
+          <div className="mb-8 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 lg:hidden">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <Leaf className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <span className="font-bold">{t('brand.name', { ns: 'common' })}</span>
             </div>
-            <span className="font-bold">AgriConnect</span>
+            <LanguageSwitcher />
           </div>
 
-          <h1 className="text-2xl font-bold mb-1">{isRegister ? 'Create Account' : 'Sign In'}</h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            {isRegister ? 'Get started with your account' : 'Enter your credentials to continue'}
+          <h1 className="mb-1 text-2xl font-bold">
+            {isRegister ? t('page.createAccount', { ns: 'auth' }) : t('page.signIn', { ns: 'auth' })}
+          </h1>
+          <p className="mb-6 text-sm text-muted-foreground">
+            {isRegister ? t('page.createAccountDescription', { ns: 'auth' }) : t('page.signInDescription', { ns: 'auth' })}
           </p>
 
-          {/* Role selector */}
           {isRegister && (
-            <div className="flex gap-2 mb-6">
-              {roles.filter(r => r.value !== 'admin').map(r => (
-                <button
-                  key={r.value}
-                  onClick={() => setRole(r.value)}
-                  className={`flex-1 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                    role === r.value
-                      ? 'bg-primary text-primary-foreground shadow-card'
-                      : 'bg-muted text-muted-foreground hover:bg-secondary'
-                  }`}
-                >
-                  {r.label}
-                </button>
-              ))}
+            <div className="mb-6 flex gap-2">
+              {roles
+                .filter((candidate) => candidate.value !== 'admin')
+                .map((candidate) => (
+                  <button
+                    key={candidate.value}
+                    type="button"
+                    onClick={() => setRole(candidate.value)}
+                    className={`flex-1 rounded-lg py-2.5 text-xs font-medium transition-all ${
+                      role === candidate.value
+                        ? 'bg-primary text-primary-foreground shadow-card'
+                        : 'bg-muted text-muted-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    {candidate.label}
+                  </button>
+                ))}
             </div>
           )}
 
@@ -134,95 +150,98 @@ const Login = () => {
             {isRegister && (
               <>
                 <div>
-                  <label className="text-xs font-medium text-foreground mb-1.5 block">Full Name</label>
+                  <label className="mb-1.5 block text-xs font-medium text-foreground">{t('form.fullName', { ns: 'auth' })}</label>
                   <input
                     type="text"
                     value={name}
-                    onChange={e => setName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="Enter your name"
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder={t('form.fullNamePlaceholder', { ns: 'auth' })}
                     required
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-foreground mb-1.5 block">Phone</label>
+                  <label className="mb-1.5 block text-xs font-medium text-foreground">{t('form.phone', { ns: 'auth' })}</label>
                   <input
                     type="tel"
                     value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="+91 98765 43210"
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder={t('form.phonePlaceholder', { ns: 'auth' })}
                   />
                 </div>
                 {role === 'farmer' && (
                   <div>
-                    <label className="text-xs font-medium text-foreground mb-1.5 block">Village</label>
+                    <label className="mb-1.5 block text-xs font-medium text-foreground">{t('form.village', { ns: 'auth' })}</label>
                     <input
                       type="text"
                       value={village}
-                      onChange={e => setVillage(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      placeholder="e.g. Karnal, Haryana"
+                      onChange={(e) => setVillage(e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder={t('form.villagePlaceholder', { ns: 'auth' })}
                     />
                   </div>
                 )}
                 {role === 'industry' && (
                   <div>
-                    <label className="text-xs font-medium text-foreground mb-1.5 block">Company Name</label>
+                    <label className="mb-1.5 block text-xs font-medium text-foreground">{t('form.companyName', { ns: 'auth' })}</label>
                     <input
                       type="text"
                       value={companyName}
-                      onChange={e => setCompanyName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      placeholder="e.g. GreenPower Biomass Ltd"
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder={t('form.companyNamePlaceholder', { ns: 'auth' })}
                       required
                     />
                   </div>
                 )}
               </>
             )}
+
             <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">Email</label>
+              <label className="mb-1.5 block text-xs font-medium text-foreground">{t('form.email', { ns: 'auth' })}</label>
               <input
                 type="email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="you@example.com"
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder={t('form.emailPlaceholder', { ns: 'auth' })}
                 required
               />
             </div>
+
             <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">Password</label>
+              <label className="mb-1.5 block text-xs font-medium text-foreground">{t('form.password', { ns: 'auth' })}</label>
               <div className="relative">
                 <input
                   type={showPw ? 'text' : 'password'}
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring pr-10"
-                  placeholder="••••••••"
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-input bg-background px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder={t('form.passwordPlaceholder', { ns: 'auth' })}
                   required
                   minLength={6}
                 />
                 <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
+
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-card disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-card transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
-              {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isRegister ? 'Create Account' : 'Sign In'}
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isRegister ? t('page.createAccount', { ns: 'auth' }) : t('page.signIn', { ns: 'auth' })}
             </button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground mt-6">
-            {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
-            <button onClick={() => setIsRegister(!isRegister)} className="text-primary font-medium hover:underline">
-              {isRegister ? 'Sign In' : 'Register'}
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            {isRegister ? t('toggle.alreadyHaveAccount', { ns: 'auth' }) : t('toggle.dontHaveAccount', { ns: 'auth' })}{' '}
+            <button type="button" onClick={() => setIsRegister(!isRegister)} className="font-medium text-primary hover:underline">
+              {isRegister ? t('toggle.signIn', { ns: 'auth' }) : t('toggle.register', { ns: 'auth' })}
             </button>
           </p>
         </div>

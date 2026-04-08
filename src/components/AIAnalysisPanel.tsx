@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Cpu, Droplets, Award, Gauge, FileText } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { adjustPriceForQuality, CROP_PRICES } from '@/data/mockData';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,24 +20,23 @@ interface AIAnalysisPanelProps {
   imageFile?: File | null;
 }
 
-function buildFallbackResult(cropType: string): AIAnalysisResult {
-  return {
-    moisture: 18,
-    grade: 'B',
-    confidence: 0,
-    adjustedPrice: CROP_PRICES[cropType] || 1500,
-    detectedCropType: cropType,
-    analysis: 'AI analysis is unavailable. Default pricing is being used, so please review before submitting.',
-  };
-}
-
 export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger, imageFile }: AIAnalysisPanelProps) {
+  const { t } = useTranslation('farmer');
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AIAnalysisResult | null>(null);
   const [analysisStep, setAnalysisStep] = useState(0);
 
   useEffect(() => {
     if (trigger === 0) return;
+
+    const buildFallbackResult = (): AIAnalysisResult => ({
+      moisture: 18,
+      grade: 'B',
+      confidence: 0,
+      adjustedPrice: CROP_PRICES[cropType] || 1500,
+      detectedCropType: cropType,
+      analysis: t('ai.unavailable'),
+    });
 
     setAnalyzing(true);
     setResult(null);
@@ -91,7 +91,7 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
         };
       } catch (err) {
         console.error('AI analysis error:', err);
-        return buildFallbackResult(cropType);
+        return buildFallbackResult();
       }
     };
 
@@ -114,16 +114,22 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
       clearTimeout(stepTimer2);
       clearTimeout(stepTimer3);
     };
-  }, [trigger]);
+  }, [trigger, cropType, imageFile, onAnalysisComplete, t]);
 
   if (!analyzing && !result) return null;
+
+  const loadingSteps = [
+    t('ai.detectingCrop'),
+    t('ai.measuringMoisture'),
+    t('ai.gradingQuality'),
+  ];
 
   return (
     <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 animate-scale-in">
       <div className="flex items-center gap-2 mb-3">
         <Cpu className="w-4 h-4 text-primary" />
-        <span className="text-sm font-semibold text-primary">AI Crop Analysis</span>
-        {imageFile && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">Image detected</span>}
+        <span className="text-sm font-semibold text-primary">{t('ai.title')}</span>
+        {imageFile && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{t('ai.imageDetected')}</span>}
       </div>
 
       {analyzing ? (
@@ -131,15 +137,15 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
           <div className="flex items-center gap-3">
             <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             <span className="text-sm text-muted-foreground">
-              {analysisStep === 0 && 'Uploading image to AI...'}
-              {analysisStep === 1 && 'Detecting crop type...'}
-              {analysisStep === 2 && 'Measuring moisture level...'}
-              {analysisStep === 3 && 'Grading biomass quality...'}
+              {analysisStep === 0 && t('ai.uploading')}
+              {analysisStep === 1 && t('ai.detectingCrop')}
+              {analysisStep === 2 && t('ai.measuringMoisture')}
+              {analysisStep === 3 && t('ai.gradingQuality')}
             </span>
           </div>
           <div className="space-y-2">
-            {['Detecting crop type...', 'Measuring moisture level...', 'Grading biomass quality...'].map((step, i) => (
-              <div key={i} className="h-3 bg-muted rounded-full overflow-hidden">
+            {loadingSteps.map((step, i) => (
+              <div key={step} className="h-3 bg-muted rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-700 ${analysisStep > i ? 'bg-primary' : 'bg-primary/40 animate-pulse'}`}
                   style={{ width: analysisStep > i ? '100%' : `${30 + i * 25}%` }}
@@ -154,30 +160,30 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
             <div className="flex items-center gap-2 bg-card rounded-lg p-2.5">
               <Cpu className="w-4 h-4 text-primary" />
               <div>
-                <p className="text-[10px] text-muted-foreground">Detected Crop</p>
+                <p className="text-[10px] text-muted-foreground">{t('ai.detectedCrop')}</p>
                 <p className="text-sm font-bold">{result.detectedCropType || cropType}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 bg-card rounded-lg p-2.5">
               <Gauge className="w-4 h-4 text-info" />
               <div>
-                <p className="text-[10px] text-muted-foreground">AI Confidence</p>
+                <p className="text-[10px] text-muted-foreground">{t('ai.confidence')}</p>
                 <p className="text-sm font-bold text-info">{result.confidence}%</p>
               </div>
             </div>
             <div className="flex items-center gap-2 bg-card rounded-lg p-2.5">
               <Droplets className="w-4 h-4 text-info" />
               <div>
-                <p className="text-[10px] text-muted-foreground">Moisture Level</p>
+                <p className="text-[10px] text-muted-foreground">{t('ai.moisture')}</p>
                 <p className={`text-sm font-bold ${result.moisture > 20 ? 'text-warning' : 'text-success'}`}>{result.moisture}%</p>
               </div>
             </div>
             <div className="flex items-center gap-2 bg-card rounded-lg p-2.5">
               <Award className="w-4 h-4 text-accent" />
               <div>
-                <p className="text-[10px] text-muted-foreground">Quality Grade</p>
+                <p className="text-[10px] text-muted-foreground">{t('ai.quality')}</p>
                 <p className={`text-sm font-bold ${result.grade === 'A' ? 'text-success' : result.grade === 'B' ? 'text-warning' : 'text-destructive'}`}>
-                  Grade {result.grade}
+                  {t('listing.grade', { grade: result.grade })}
                 </p>
               </div>
             </div>
@@ -187,7 +193,7 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
             <div className="flex items-start gap-2 bg-card rounded-lg p-2.5">
               <FileText className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <div>
-                <p className="text-[10px] text-muted-foreground">AI Analysis</p>
+                <p className="text-[10px] text-muted-foreground">{t('ai.analysis')}</p>
                 <p className="text-xs leading-relaxed">{result.analysis}</p>
               </div>
             </div>
@@ -195,7 +201,7 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
 
           {result.adjustedPrice !== (CROP_PRICES[result.detectedCropType || cropType] || CROP_PRICES[cropType]) && (
             <div className="text-xs bg-warning/10 text-warning rounded-lg p-2 text-center">
-              Price adjusted to <strong>Rs {result.adjustedPrice}/ton</strong> based on quality analysis
+              {t('ai.adjustedPrice', { value: `Rs ${result.adjustedPrice}` })}
             </div>
           )}
         </div>

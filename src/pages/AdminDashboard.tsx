@@ -5,6 +5,7 @@ import { Users, Factory, BarChart3, Leaf, TrendingUp, ShieldCheck, ShieldX, Load
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import TransactionTimeline from '@/components/TransactionTimeline';
 import { toast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -12,6 +13,7 @@ const AdminDashboard = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [expandedTx, setExpandedTx] = useState<string | null>(null);
+  const { t } = useTranslation(['common', 'admin']);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -55,7 +57,7 @@ const AdminDashboard = () => {
     const { error } = await supabase.from('profiles').update({ approved: !currentApproved }).eq('user_id', userId);
     if (!error) {
       setProfiles(prev => prev.map(p => p.user_id === userId ? { ...p, approved: !currentApproved } : p));
-      toast({ title: currentApproved ? 'User Blocked' : 'User Approved' });
+      toast({ title: currentApproved ? t('toasts.userBlocked', { ns: 'admin' }) : t('toasts.userApproved', { ns: 'admin' }) });
     }
   };
 
@@ -104,15 +106,15 @@ const AdminDashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold">Admin Dashboard</h2>
+        <h2 className="text-2xl font-bold">{t('dashboard.title', { ns: 'admin' })}</h2>
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
-            { icon: Users, label: 'Farmers', value: stats.farmers, color: 'text-primary' },
-            { icon: Factory, label: 'Industries', value: stats.industries, color: 'text-info' },
-            { icon: BarChart3, label: 'Transactions', value: stats.transactions, color: 'text-warning' },
-            { icon: TrendingUp, label: 'Biomass Traded', value: `${stats.biomass}t`, color: 'text-success' },
-            { icon: Leaf, label: 'CO₂ Reduced', value: `${carbonReduction.toFixed(1)}t`, color: 'text-primary' },
+            { icon: Users, label: t('dashboard.stats.farmers', { ns: 'admin' }), value: stats.farmers, color: 'text-primary' },
+            { icon: Factory, label: t('dashboard.stats.industries', { ns: 'admin' }), value: stats.industries, color: 'text-info' },
+            { icon: BarChart3, label: t('dashboard.stats.transactions', { ns: 'admin' }), value: stats.transactions, color: 'text-warning' },
+            { icon: TrendingUp, label: t('dashboard.stats.biomassTraded', { ns: 'admin' }), value: `${stats.biomass}t`, color: 'text-success' },
+            { icon: Leaf, label: t('dashboard.stats.co2Reduced', { ns: 'admin' }), value: `${carbonReduction.toFixed(1)}t`, color: 'text-primary' },
           ].map((s, i) => (
             <div key={i} className="bg-card rounded-xl p-4 shadow-card animate-fade-in" style={{ animationDelay: `${i * 60}ms` }}>
               <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
@@ -127,22 +129,22 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Leaf className="w-5 h-5 text-primary" />
-              <h4 className="font-semibold text-sm">CO₂ Reduction Progress</h4>
+              <h4 className="font-semibold text-sm">{t('dashboard.progressTitle', { ns: 'admin' })}</h4>
             </div>
-            <span className="text-xs text-muted-foreground">{carbonReduction.toFixed(1)}t / {carbonGoal}t goal</span>
+            <span className="text-xs text-muted-foreground">{t('dashboard.progressSummary', { ns: 'admin', current: carbonReduction.toFixed(1), goal: carbonGoal })}</span>
           </div>
           <div className="h-4 bg-muted rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-primary to-success rounded-full transition-all duration-1000 ease-out" style={{ width: `${carbonProgress}%` }} />
           </div>
-          <p className="text-[10px] text-muted-foreground mt-1">{carbonProgress.toFixed(0)}% of quarterly target achieved</p>
+          <p className="text-[10px] text-muted-foreground mt-1">{t('dashboard.progressAchieved', { ns: 'admin', percent: carbonProgress.toFixed(0) })}</p>
         </div>
 
         {/* Charts */}
         <div className="grid md:grid-cols-3 gap-6">
           <div className="bg-card rounded-xl p-5 shadow-card">
-            <h4 className="font-semibold text-sm mb-4">Monthly Biomass & Transactions</h4>
+            <h4 className="font-semibold text-sm mb-4">{t('dashboard.charts.monthly', { ns: 'admin' })}</h4>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={monthlyData.length ? monthlyData : [{ month: 'No data', biomass: 0, transactions: 0 }]}>
+              <BarChart data={monthlyData.length ? monthlyData : [{ month: t('dashboard.charts.noData', { ns: 'admin' }), biomass: 0, transactions: 0 }]}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(80, 15%, 88%)" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
@@ -153,11 +155,11 @@ const AdminDashboard = () => {
             </ResponsiveContainer>
           </div>
           <div className="bg-card rounded-xl p-5 shadow-card">
-            <h4 className="font-semibold text-sm mb-4">Most Demanded Crop</h4>
+            <h4 className="font-semibold text-sm mb-4">{t('dashboard.charts.mostDemandedCrop', { ns: 'admin' })}</h4>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
-                <Pie data={pieData.length ? pieData : [{ name: 'No data', value: 1 }]} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={4} dataKey="value">
-                  {(pieData.length ? pieData : [{ name: 'No data' }]).map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
+                <Pie data={pieData.length ? pieData : [{ name: t('dashboard.charts.noData', { ns: 'admin' }), value: 1 }]} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={4} dataKey="value">
+                  {(pieData.length ? pieData : [{ name: t('dashboard.charts.noData', { ns: 'admin' }) }]).map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
@@ -171,9 +173,9 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="bg-card rounded-xl p-5 shadow-card">
-            <h4 className="font-semibold text-sm mb-4">CO₂ Reduction Trend</h4>
+            <h4 className="font-semibold text-sm mb-4">{t('dashboard.charts.co2Trend', { ns: 'admin' })}</h4>
             <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={monthlyData.length ? monthlyData : [{ month: 'No data', co2: 0 }]}>
+              <AreaChart data={monthlyData.length ? monthlyData : [{ month: t('dashboard.charts.noData', { ns: 'admin' }), co2: 0 }]}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(80, 15%, 88%)" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
@@ -193,12 +195,12 @@ const AdminDashboard = () => {
         {/* Top Villages */}
         {topVillages.length > 0 && (
           <div className="bg-card rounded-xl p-6 shadow-card">
-            <h3 className="font-semibold text-lg mb-4">Top Farmer Villages</h3>
+            <h3 className="font-semibold text-lg mb-4">{t('dashboard.topVillages', { ns: 'admin' })}</h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {topVillages.map(([village, count], i) => (
                 <div key={i} className="bg-muted rounded-lg p-3 text-center">
                   <p className="font-medium text-sm">{village}</p>
-                  <p className="text-xs text-muted-foreground">{count} farmer{count > 1 ? 's' : ''}</p>
+                  <p className="text-xs text-muted-foreground">{count} {t('dashboard.stats.farmers', { ns: 'admin' })}</p>
                 </div>
               ))}
             </div>
@@ -207,37 +209,37 @@ const AdminDashboard = () => {
 
         {/* Users Management */}
         <div className="bg-card rounded-xl p-6 shadow-card">
-          <h3 className="font-semibold text-lg mb-4">User Management</h3>
+          <h3 className="font-semibold text-lg mb-4">{t('dashboard.usersTitle', { ns: 'admin' })}</h3>
           {profiles.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No users registered yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">{t('dashboard.noUsers', { ns: 'admin' })}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left">
-                    <th className="pb-3 text-xs text-muted-foreground font-medium">Name</th>
-                    <th className="pb-3 text-xs text-muted-foreground font-medium">Email</th>
-                    <th className="pb-3 text-xs text-muted-foreground font-medium">Role</th>
-                    <th className="pb-3 text-xs text-muted-foreground font-medium">Status</th>
-                    <th className="pb-3 text-xs text-muted-foreground font-medium">Action</th>
+                    <th className="pb-3 text-xs text-muted-foreground font-medium">{t('dashboard.tableHeaders.name', { ns: 'admin' })}</th>
+                    <th className="pb-3 text-xs text-muted-foreground font-medium">{t('dashboard.tableHeaders.email', { ns: 'admin' })}</th>
+                    <th className="pb-3 text-xs text-muted-foreground font-medium">{t('dashboard.tableHeaders.role', { ns: 'admin' })}</th>
+                    <th className="pb-3 text-xs text-muted-foreground font-medium">{t('dashboard.tableHeaders.status', { ns: 'admin' })}</th>
+                    <th className="pb-3 text-xs text-muted-foreground font-medium">{t('dashboard.tableHeaders.action', { ns: 'admin' })}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {profiles.map(u => (
                     <tr key={u.id} className="border-b border-border/50">
-                      <td className="py-3 font-medium">{u.name || u.companyName || 'Unknown'}</td>
+                      <td className="py-3 font-medium">{u.name || u.companyName || t('users.unnamed', { ns: 'admin' })}</td>
                       <td className="py-3 text-muted-foreground">{u.email}</td>
                       <td className="py-3 capitalize">{u.role}</td>
                       <td className="py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${u.approved ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
-                          {u.approved ? 'active' : 'blocked'}
+                          {u.approved ? t('users.active', { ns: 'admin' }) : t('users.blocked', { ns: 'admin' })}
                         </span>
                       </td>
                       <td className="py-3">
                         <button onClick={() => toggleApproval(u.user_id, u.approved)} className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                           u.approved ? 'bg-destructive/10 text-destructive hover:bg-destructive/20' : 'bg-success/10 text-success hover:bg-success/20'
                         }`}>
-                          {u.approved ? <><ShieldX className="w-3 h-3" /> Block</> : <><ShieldCheck className="w-3 h-3" /> Approve</>}
+                          {u.approved ? <><ShieldX className="w-3 h-3" /> {t('users.block', { ns: 'admin' })}</> : <><ShieldCheck className="w-3 h-3" /> {t('users.approve', { ns: 'admin' })}</>}
                         </button>
                       </td>
                     </tr>
@@ -250,9 +252,9 @@ const AdminDashboard = () => {
 
         {/* All Transactions */}
         <div className="bg-card rounded-xl p-6 shadow-card">
-          <h3 className="font-semibold text-lg mb-4">All Transactions</h3>
+          <h3 className="font-semibold text-lg mb-4">{t('dashboard.transactionsTitle', { ns: 'admin' })}</h3>
           {transactions.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No transactions yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">{t('dashboard.noTransactions', { ns: 'admin' })}</p>
           ) : (
             <div className="space-y-3">
               {transactions.map(t => (
@@ -267,10 +269,10 @@ const AdminDashboard = () => {
                       t.status === 'accepted' ? 'bg-info/15 text-info' :
                       t.status === 'pending' ? 'bg-warning/15 text-warning' :
                       'bg-destructive/15 text-destructive'
-                    }`}>{t.status}</span>
+                    }`}>{t(`dashboard.statusLabels.${t.status}`, { ns: 'admin' })}</span>
                   </div>
                   <button onClick={() => setExpandedTx(expandedTx === t.id ? null : t.id)} className="text-[10px] text-primary mt-2 hover:underline">
-                    {expandedTx === t.id ? 'Hide' : 'Show'} Timeline
+                    {expandedTx === t.id ? t('dashboard.hideTimeline', { ns: 'admin' }) : t('dashboard.showTimeline', { ns: 'admin' })}
                   </button>
                   {expandedTx === t.id && (
                     <div className="mt-2 pt-2 border-t border-border">

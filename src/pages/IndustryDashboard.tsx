@@ -4,9 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Factory, Wheat, CheckCircle, Clock, IndianRupee, Loader2, ShoppingCart, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const IndustryDashboard = () => {
   const { user } = useAuth();
+  const { t } = useTranslation(['common', 'industry']);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [availableCount, setAvailableCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -36,14 +38,14 @@ const IndustryDashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold">Industry Dashboard</h2>
+        <h2 className="text-2xl font-bold">{t('dashboard.title', { ns: 'industry' })}</h2>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { icon: Clock, label: 'Pending Requests', value: pendingCount.toString(), color: 'text-warning' },
-            { icon: CheckCircle, label: 'Completed', value: completedCount.toString(), color: 'text-success' },
-            { icon: Wheat, label: 'Biomass Procured', value: `${totalBiomass}t`, color: 'text-primary' },
-            { icon: IndianRupee, label: 'Total Spent', value: `₹${totalSpent.toLocaleString()}`, color: 'text-info' },
+            { icon: Clock, label: t('dashboard.stats.pendingRequests', { ns: 'industry' }), value: pendingCount.toString(), color: 'text-warning' },
+            { icon: CheckCircle, label: t('dashboard.stats.completed', { ns: 'industry' }), value: completedCount.toString(), color: 'text-success' },
+            { icon: Wheat, label: t('dashboard.stats.biomassProcured', { ns: 'industry' }), value: `${totalBiomass}t`, color: 'text-primary' },
+            { icon: IndianRupee, label: t('dashboard.stats.totalSpent', { ns: 'industry' }), value: `₹${totalSpent.toLocaleString()}`, color: 'text-info' },
           ].map((s, i) => (
             <div key={i} className="bg-card rounded-xl p-4 shadow-card animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
               <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
@@ -59,16 +61,16 @@ const IndustryDashboard = () => {
               <ShoppingCart className="w-6 h-6 text-primary" />
               <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
             </div>
-            <h3 className="font-semibold mb-1">Browse Listings</h3>
-            <p className="text-sm text-muted-foreground">{availableCount} available crop residue listings</p>
+            <h3 className="font-semibold mb-1">{t('dashboard.browseTitle', { ns: 'industry' })}</h3>
+            <p className="text-sm text-muted-foreground">{t('dashboard.browseDescription', { ns: 'industry', count: availableCount })}</p>
           </Link>
           <Link to="/industry/requests" className="bg-card rounded-xl p-6 shadow-card hover:shadow-lg transition-shadow group">
             <div className="flex items-center justify-between mb-3">
               <Factory className="w-6 h-6 text-info" />
               <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
             </div>
-            <h3 className="font-semibold mb-1">My Requests</h3>
-            <p className="text-sm text-muted-foreground">{transactions.length} total transactions • {pendingCount} pending</p>
+            <h3 className="font-semibold mb-1">{t('dashboard.requestsTitle', { ns: 'industry' })}</h3>
+            <p className="text-sm text-muted-foreground">{t('dashboard.requestsDescription', { ns: 'industry', total: transactions.length, pending: pendingCount })}</p>
           </Link>
         </div>
       </div>

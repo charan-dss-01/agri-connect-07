@@ -3,6 +3,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Search, ShieldCheck, ShieldX, Loader2, Mail, Phone, MapPin, Wheat } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 interface MergedUser {
   id: string;
@@ -20,6 +21,7 @@ interface MergedUser {
 }
 
 const AdminUsers = () => {
+  const { t } = useTranslation(['common', 'admin']);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<MergedUser[]>([]);
   const [search, setSearch] = useState('');
@@ -58,7 +60,7 @@ const AdminUsers = () => {
     const { error } = await supabase.from('profiles').update({ approved: !currentApproved }).eq('user_id', userId);
     if (!error) {
       setUsers(prev => prev.map(u => u.user_id === userId ? { ...u, approved: !currentApproved } : u));
-      toast({ title: currentApproved ? 'User Blocked' : 'User Approved' });
+      toast({ title: currentApproved ? t('toasts.userBlocked', { ns: 'admin' }) : t('toasts.userApproved', { ns: 'admin' }) });
     }
   };
 
@@ -90,20 +92,20 @@ const AdminUsers = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">User Management</h2>
+          <h2 className="text-2xl font-bold">{t('users.title', { ns: 'admin' })}</h2>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Users className="w-4 h-4" />
-            <span>{users.length} total users</span>
+            <span>{t('users.totalUsers', { ns: 'admin', count: users.length })}</span>
           </div>
         </div>
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Users', value: users.length, color: 'text-primary' },
-            { label: 'Farmers', value: roleCounts.farmer, color: 'text-success' },
-            { label: 'Industries', value: roleCounts.industry, color: 'text-info' },
-            { label: 'Blocked', value: users.filter(u => !u.approved).length, color: 'text-destructive' },
+            { label: t('users.summary.totalUsers', { ns: 'admin' }), value: users.length, color: 'text-primary' },
+            { label: t('users.summary.farmers', { ns: 'admin' }), value: roleCounts.farmer, color: 'text-success' },
+            { label: t('users.summary.industries', { ns: 'admin' }), value: roleCounts.industry, color: 'text-info' },
+            { label: t('users.summary.blocked', { ns: 'admin' }), value: users.filter(u => !u.approved).length, color: 'text-destructive' },
           ].map((s, i) => (
             <div key={i} className="bg-card rounded-xl p-4 shadow-card">
               <p className="text-xs text-muted-foreground">{s.label}</p>
@@ -120,7 +122,7 @@ const AdminUsers = () => {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name, email, company, or village..."
+              placeholder={t('users.searchPlaceholder', { ns: 'admin' })}
               className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -133,7 +135,7 @@ const AdminUsers = () => {
                   roleFilter === r ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'
                 }`}
               >
-                {r.charAt(0).toUpperCase() + r.slice(1)} ({roleCounts[r]})
+                {t(`users.filters.${r}`, { ns: 'admin' })} ({roleCounts[r]})
               </button>
             ))}
           </div>
@@ -146,7 +148,7 @@ const AdminUsers = () => {
                   statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'
                 }`}
               >
-                {s.charAt(0).toUpperCase() + s.slice(1)}
+                {t(`users.filters.${s}`, { ns: 'admin' })}
               </button>
             ))}
           </div>
@@ -157,20 +159,20 @@ const AdminUsers = () => {
           {filtered.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No users match your filters.</p>
+              <p className="text-sm text-muted-foreground">{t('users.noMatch', { ns: 'admin' })}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
-                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">User</th>
-                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">Contact</th>
-                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">Role</th>
-                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">Details</th>
-                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">Status</th>
-                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">Joined</th>
-                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">Action</th>
+                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">{t('dashboard.tableHeaders.user', { ns: 'admin' })}</th>
+                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">{t('dashboard.tableHeaders.contact', { ns: 'admin' })}</th>
+                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">{t('dashboard.tableHeaders.role', { ns: 'admin' })}</th>
+                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">{t('dashboard.tableHeaders.details', { ns: 'admin' })}</th>
+                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">{t('dashboard.tableHeaders.status', { ns: 'admin' })}</th>
+                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">{t('dashboard.tableHeaders.joined', { ns: 'admin' })}</th>
+                    <th className="px-4 py-3 text-left text-xs text-muted-foreground font-medium">{t('dashboard.tableHeaders.action', { ns: 'admin' })}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -182,7 +184,7 @@ const AdminUsers = () => {
                             {(u.name || u.email || '?').charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-medium">{u.name || 'Unnamed'}</p>
+                            <p className="font-medium">{u.name || t('users.unnamed', { ns: 'admin' })}</p>
                             {u.companyName && <p className="text-xs text-muted-foreground">{u.companyName}</p>}
                           </div>
                         </div>
@@ -207,26 +209,26 @@ const AdminUsers = () => {
                           u.role === 'industry' ? 'bg-info/15 text-info' :
                           'bg-warning/15 text-warning'
                         }`}>
-                          {u.role === 'farmer' ? '🌾' : u.role === 'industry' ? '🏭' : '🔧'} {u.role}
+                          {u.role === 'farmer' ? '🌾' : u.role === 'industry' ? '🏭' : '🔧'} {u.role === 'farmer' ? t('roles.farmer', { ns: 'common' }) : u.role === 'industry' ? t('roles.industry', { ns: 'common' }) : t('roles.admin', { ns: 'common' })}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">
                         {u.role === 'farmer' && (
                           <div className="space-y-0.5">
                             {u.village && <p className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {u.village}</p>}
-                            {u.land_size && <p className="flex items-center gap-1"><Wheat className="w-3 h-3" /> {Number(u.land_size)} acres</p>}
+                            {u.land_size && <p className="flex items-center gap-1"><Wheat className="w-3 h-3" /> {t('users.acres', { ns: 'admin', value: Number(u.land_size) })}</p>}
                           </div>
                         )}
                         {u.role === 'industry' && u.industryType && (
                           <p>{u.industryType}</p>
                         )}
-                        {u.role === 'admin' && <p>Administrator</p>}
+                        {u.role === 'admin' && <p>{t('users.administrator', { ns: 'admin' })}</p>}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                           u.approved ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'
                         }`}>
-                          {u.approved ? 'Active' : 'Blocked'}
+                          {u.approved ? t('users.active', { ns: 'admin' }) : t('users.blocked', { ns: 'admin' })}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">
@@ -242,7 +244,7 @@ const AdminUsers = () => {
                                 : 'bg-success/10 text-success hover:bg-success/20'
                             }`}
                           >
-                            {u.approved ? <><ShieldX className="w-3 h-3" /> Block</> : <><ShieldCheck className="w-3 h-3" /> Approve</>}
+                            {u.approved ? <><ShieldX className="w-3 h-3" /> {t('users.block', { ns: 'admin' })}</> : <><ShieldCheck className="w-3 h-3" /> {t('users.approve', { ns: 'admin' })}</>}
                           </button>
                         )}
                       </td>
