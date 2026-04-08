@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 // Real carbon data comes from completed transactions
 import { Wheat, IndianRupee, Truck, Leaf, Loader2 } from 'lucide-react';
 import CarbonCreditsCard from '@/components/CarbonCreditsCard';
+import GamificationCard from '@/components/GamificationCard';
+import ComplaintDialog from '@/components/ComplaintDialog';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -48,14 +50,17 @@ const FarmerDashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-2xl font-bold">{t('dashboard.title', { ns: 'farmer' })}</h2>
-          <button
-            onClick={() => navigate('/farmer/list')}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Wheat className="w-4 h-4" /> {t('dashboard.cta', { ns: 'farmer' })}
-          </button>
+          <div className="flex items-center gap-2">
+            <ComplaintDialog />
+            <button
+              onClick={() => navigate('/farmer/list')}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Wheat className="w-4 h-4" /> {t('dashboard.cta', { ns: 'farmer' })}
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -76,6 +81,9 @@ const FarmerDashboard = () => {
 
         {/* Carbon Credits */}
         <CarbonCreditsCard totalBiomass={totalBiomass} />
+
+        {/* Gamification */}
+        <GamificationCard />
 
         {/* Quick access cards */}
         <div className="grid md:grid-cols-2 gap-4">

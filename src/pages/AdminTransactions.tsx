@@ -97,7 +97,7 @@ const AdminTransactions = () => {
           <h2 className="text-2xl font-bold">{t('transactions.title', { ns: 'admin' })}</h2>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <BarChart3 className="w-4 h-4" />
-            <span>{t('transactions.total', { ns: 'admin', count: transactions.length })}</span>
+            <span>{t('transactions.totalCount', { ns: 'admin', count: transactions.length })}</span>
           </div>
         </div>
 

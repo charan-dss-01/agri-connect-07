@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Factory, Wheat, CheckCircle, Clock, IndianRupee, Loader2, ShoppingCart, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import GamificationCard from '@/components/GamificationCard';
+import ComplaintDialog from '@/components/ComplaintDialog';
 import { useTranslation } from 'react-i18next';
 
 const IndustryDashboard = () => {
@@ -38,7 +40,10 @@ const IndustryDashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold">{t('dashboard.title', { ns: 'industry' })}</h2>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="text-2xl font-bold">{t('dashboard.title', { ns: 'industry' })}</h2>
+          <ComplaintDialog />
+        </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
@@ -73,6 +78,9 @@ const IndustryDashboard = () => {
             <p className="text-sm text-muted-foreground">{t('dashboard.requestsDescription', { ns: 'industry', total: transactions.length, pending: pendingCount })}</p>
           </Link>
         </div>
+
+        {/* Gamification */}
+        <GamificationCard />
       </div>
     </DashboardLayout>
   );
