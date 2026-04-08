@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 // Real carbon data comes from completed transactions
 import { Wheat, IndianRupee, Truck, Leaf, Loader2 } from 'lucide-react';
 import CarbonCreditsCard from '@/components/CarbonCreditsCard';
+import GamificationCard from '@/components/GamificationCard';
+import ComplaintDialog from '@/components/ComplaintDialog';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
