@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, X, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +20,7 @@ const CHANNEL_CLEANUP_DELAY_MS = 1500;
 let sharedNotificationsChannel: ReturnType<typeof supabase.channel> | null = null;
 let sharedNotificationsUserId: string | null = null;
 let sharedNotificationsSubscribers = 0;
-let sharedNotificationsCleanupTimer: ReturnType<typeof setTimeout> | null = null;
+let sharedNotificationsCleanupTimer: number | null = null;
 const sharedNotificationListeners = new Set<(notification: NotificationItem) => void>();
 
 const clearSharedNotificationsCleanup = () => {
@@ -98,6 +99,8 @@ export default function NotificationPanel() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [panelPosition, setPanelPosition] = useState({ top: 0, right: 16 });
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const { t, i18n } = useTranslation('common');
 
   useEffect(() => {
@@ -158,9 +161,36 @@ export default function NotificationPanel() {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
+  useEffect(() => {
+    if (!open) return;
+
+    const updatePosition = () => {
+      const trigger = triggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      setPanelPosition({
+        top: rect.bottom + 8,
+        right: Math.max(8, window.innerWidth - rect.right),
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [open]);
+
   return (
-    <div className="relative">
-      <button onClick={() => setOpen(!open)} className="relative p-2 rounded-lg hover:bg-muted transition-colors">
+    <div className="relative z-50">
+      <button
+        ref={triggerRef}
+        onClick={() => setOpen(!open)}
+        className="relative p-2 rounded-lg hover:bg-muted transition-colors"
+      >
         <Bell className="w-4.5 h-4.5 text-muted-foreground" />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-accent text-accent-foreground text-[9px] font-bold rounded-full flex items-center justify-center animate-scale-in">
@@ -169,10 +199,13 @@ export default function NotificationPanel() {
         )}
       </button>
 
-      {open && (
+      {open && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-xl shadow-elevated z-50 animate-scale-in overflow-hidden">
+          <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-[100] w-[min(20rem,calc(100vw-1rem))] bg-card border border-border rounded-xl shadow-elevated animate-scale-in overflow-hidden"
+            style={{ top: panelPosition.top, right: panelPosition.right }}
+          >
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <h4 className="text-sm font-semibold">{t('notifications.title')}</h4>
               <div className="flex items-center gap-2">
@@ -207,7 +240,8 @@ export default function NotificationPanel() {
               )}
             </div>
           </div>
-        </>
+        </>,
+        document.body,
       )}
     </div>
   );

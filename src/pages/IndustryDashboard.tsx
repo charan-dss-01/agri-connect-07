@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Factory, Wheat, CheckCircle, Clock, IndianRupee, Loader2, ShoppingCart, ArrowRight } from 'lucide-react';
+import { Factory, Wheat, CheckCircle, Clock, IndianRupee, Loader2, ShoppingCart, ArrowRight, TrendingUp } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import GamificationCard from '@/components/GamificationCard';
+import PremiumStatCard from '@/components/PremiumStatCard';
 import ComplaintDialog from '@/components/ComplaintDialog';
 import { useTranslation } from 'react-i18next';
 
@@ -39,44 +41,123 @@ const IndustryDashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h2 className="text-2xl font-bold">{t('dashboard.title', { ns: 'industry' })}</h2>
+      <div className="space-y-8">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between flex-wrap gap-4"
+        >
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              {t('dashboard.title', { ns: 'industry' })}
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {t('header.welcomeBack', { ns: 'common' })} {user?.name}
+            </p>
+          </div>
           <ComplaintDialog />
+        </motion.div>
+
+        {/* Premium Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <PremiumStatCard
+            title={t('dashboard.stats.pendingRequests', { ns: 'industry' })}
+            value={pendingCount}
+            icon={Clock}
+            gradient="accent"
+            trend={pendingCount > 0 ? 15 : undefined}
+            subtext={t('dashboard.stats.pendingRequests', { ns: 'industry' })}
+            animated
+          />
+          <PremiumStatCard
+            title={t('dashboard.stats.completed', { ns: 'industry' })}
+            value={completedCount}
+            icon={CheckCircle}
+            gradient="success"
+            trend={completedCount > 0 ? 22 : undefined}
+            subtext={t('dashboard.stats.completed', { ns: 'industry' })}
+            animated
+          />
+          <PremiumStatCard
+            title={t('dashboard.stats.biomassProcured', { ns: 'industry' })}
+            value={totalBiomass}
+            icon={Wheat}
+            gradient="primary"
+            trend={totalBiomass > 0 ? 18 : undefined}
+            subtext={t('dashboard.stats.biomassProcured', { ns: 'industry' })}
+            animated
+          />
+          <PremiumStatCard
+            title={t('dashboard.stats.totalSpent', { ns: 'industry' })}
+            value={totalSpent}
+            icon={IndianRupee}
+            gradient="destructive"
+            trend={totalSpent > 0 ? 28 : undefined}
+            subtext={`₹${totalSpent.toLocaleString()}`}
+            animated
+          />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { icon: Clock, label: t('dashboard.stats.pendingRequests', { ns: 'industry' }), value: pendingCount.toString(), color: 'text-warning' },
-            { icon: CheckCircle, label: t('dashboard.stats.completed', { ns: 'industry' }), value: completedCount.toString(), color: 'text-success' },
-            { icon: Wheat, label: t('dashboard.stats.biomassProcured', { ns: 'industry' }), value: `${totalBiomass}t`, color: 'text-primary' },
-            { icon: IndianRupee, label: t('dashboard.stats.totalSpent', { ns: 'industry' }), value: `₹${totalSpent.toLocaleString()}`, color: 'text-info' },
-          ].map((s, i) => (
-            <div key={i} className="bg-card rounded-xl p-4 shadow-card animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
-              <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
-              <p className="text-xl font-bold">{s.value}</p>
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-            </div>
-          ))}
-        </div>
+        {/* Quick access cards */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            whileHover={{ translateY: -2 }}
+            className="relative overflow-hidden rounded-2xl border border-primary/20 transition-all duration-300 cursor-pointer group p-6 bg-card/60"
+            asChild
+          >
+            <Link to="/industry/browse">
+              <div className="absolute inset-0 backdrop-blur-xl bg-card/30" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <motion.div
+                    className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center transition-transform"
+                    whileHover={{ scale: 1.03 }}
+                  >
+                    <ShoppingCart className="w-6 h-6 text-primary" />
+                  </motion.div>
+                  <ArrowRight className="w-4 h-4 text-primary/80" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">{t('dashboard.browseTitle', { ns: 'industry' })}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{t('dashboard.browseDescription', { ns: 'industry', count: availableCount })}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-primary">{t('dashboard.browseDescription', { ns: 'industry', count: availableCount })}</p>
+                </div>
+              </div>
+            </Link>
+          </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <Link to="/industry/browse" className="bg-card rounded-xl p-6 shadow-card hover:shadow-lg transition-shadow group">
-            <div className="flex items-center justify-between mb-3">
-              <ShoppingCart className="w-6 h-6 text-primary" />
-              <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-            </div>
-            <h3 className="font-semibold mb-1">{t('dashboard.browseTitle', { ns: 'industry' })}</h3>
-            <p className="text-sm text-muted-foreground">{t('dashboard.browseDescription', { ns: 'industry', count: availableCount })}</p>
-          </Link>
-          <Link to="/industry/requests" className="bg-card rounded-xl p-6 shadow-card hover:shadow-lg transition-shadow group">
-            <div className="flex items-center justify-between mb-3">
-              <Factory className="w-6 h-6 text-info" />
-              <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-            </div>
-            <h3 className="font-semibold mb-1">{t('dashboard.requestsTitle', { ns: 'industry' })}</h3>
-            <p className="text-sm text-muted-foreground">{t('dashboard.requestsDescription', { ns: 'industry', total: transactions.length, pending: pendingCount })}</p>
-          </Link>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            whileHover={{ translateY: -2 }}
+            className="relative overflow-hidden rounded-2xl border border-accent/20 transition-all duration-300 cursor-pointer group p-6 bg-card/60"
+            asChild
+          >
+            <Link to="/industry/requests">
+              <div className="absolute inset-0 backdrop-blur-xl bg-card/30" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <motion.div
+                    className="w-12 h-12 rounded-xl bg-accent/15 flex items-center justify-center transition-transform"
+                    whileHover={{ scale: 1.03 }}
+                  >
+                    <Factory className="w-6 h-6 text-accent" />
+                  </motion.div>
+                  <ArrowRight className="w-4 h-4 text-accent/80" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">{t('dashboard.requestsTitle', { ns: 'industry' })}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{t('dashboard.requestsDescription', { ns: 'industry', total: transactions.length, pending: pendingCount })}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-accent">{t('dashboard.requestsDescription', { ns: 'industry', total: transactions.length, pending: pendingCount })}</p>
+                </div>
+              </div>
+            </Link>
+          </motion.div>
         </div>
 
         {/* Gamification */}

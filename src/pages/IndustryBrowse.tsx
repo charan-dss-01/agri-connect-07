@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Wheat, Loader2, ShoppingCart, MapPin } from 'lucide-react';
+import { Wheat, Loader2, ShoppingCart, MapPin, Package, Tag, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
 import { calculateDistance, TRANSPORT_RATE, CLUSTER_RADIUS_KM, CLUSTER_DISCOUNT } from '@/data/mockData';
 import { useTranslation } from 'react-i18next';
@@ -97,51 +98,154 @@ const IndustryBrowse = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold">{t('browse.title', { ns: 'industry' })}</h2>
+      <div className="space-y-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            {t('browse.title', { ns: 'industry' })}
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            {t('browse.subtitle', { ns: 'industry', defaultValue: 'Discover and purchase quality crop residue from verified farmers' })}
+          </p>
+        </motion.div>
 
         {availableListings.length === 0 ? (
-          <div className="bg-card rounded-xl p-12 shadow-card text-center">
-            <Wheat className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">{t('browse.empty', { ns: 'industry' })}</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative overflow-hidden rounded-2xl border border-border/50 backdrop-blur-xl p-12"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-30" />
+            <div className="relative z-10 flex flex-col items-center justify-center">
+              <Wheat className="w-16 h-16 text-muted-foreground/20 mb-4" />
+              <p className="text-lg font-semibold text-muted-foreground">{t('browse.empty', { ns: 'industry' })}</p>
+              <p className="text-sm text-muted-foreground/60 mt-2">{t('browse.emptyHint', { ns: 'industry', defaultValue: 'Check back soon for new listings' })}</p>
+            </div>
+          </motion.div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {availableListings.map(l => {
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {availableListings.map((l, idx) => {
               const dist = (industryProfile?.lat && industryProfile?.lng && l.lat && l.lng)
                 ? calculateDistance(Number(industryProfile.lat), Number(industryProfile.lng), Number(l.lat), Number(l.lng))
                 : null;
+              const isCluster = dist && dist <= CLUSTER_RADIUS_KM;
               return (
-                <div key={l.id} className="bg-card border border-border rounded-xl p-4 hover:shadow-card transition-shadow animate-fade-in">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="font-semibold text-sm">{l.crop_type} — {Number(l.quantity)} tons</p>
-                      <p className="text-xs text-muted-foreground">₹{Number(l.adjusted_price_per_ton)}/ton • {t('browse.total', { ns: 'industry', value: `₹${Number(l.total_value).toLocaleString()}` })}</p>
-                    </div>
-                    {l.quality_grade && (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                        l.quality_grade === 'A' ? 'bg-success/15 text-success' :
-                        l.quality_grade === 'B' ? 'bg-warning/15 text-warning' :
-                        'bg-destructive/15 text-destructive'
-                      }`}>{t('browse.grade', { ns: 'industry', grade: l.quality_grade })}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
-                    {l.address && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {l.address}</span>}
-                    {dist !== null && <span>📍 {t('browse.distanceAway', { ns: 'industry', distance: dist })}</span>}
-                    {l.moisture_level && <span>💧 {t('browse.moisture', { ns: 'industry', value: Number(l.moisture_level) })}</span>}
-                    {l.ai_confidence && <span>🤖 {t('browse.aiConfidence', { ns: 'industry', value: Number(l.ai_confidence) })}</span>}
-                  </div>
+                <motion.div
+                  key={l.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  whileHover={{ translateY: -2 }}
+                  className="relative overflow-hidden rounded-2xl border border-primary/25 backdrop-blur-xl transition-all duration-300 group bg-card/60"
+                >
+                  <div className="absolute inset-0 backdrop-blur-xl bg-card/35" />
+                  
+                  {/* Image */}
                   {l.image_url && (
-                    <img src={l.image_url} alt={t('browse.cropResidueAlt', { ns: 'industry' })} className="w-full h-32 object-cover rounded-lg mb-3" />
+                    <div className="relative h-40 overflow-hidden">
+                      <motion.img
+                        src={l.image_url}
+                        alt={t('browse.cropResidueAlt', { ns: 'industry' })}
+                        className="w-full h-full object-cover transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      
+                      {/* Quality Badge */}
+                      {l.quality_grade && (
+                        <div className="absolute top-3 right-3 z-10">
+                          <motion.span
+                            whileHover={{ scale: 1.03 }}
+                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-xl ${
+                              l.quality_grade === 'A' ? 'bg-success/80 text-white shadow-lg shadow-success/40' :
+                              l.quality_grade === 'B' ? 'bg-warning/80 text-white shadow-lg shadow-warning/40' :
+                              'bg-info/80 text-white shadow-lg shadow-info/40'
+                            }`}
+                          >
+                            <Tag className="w-3.5 h-3.5" /> {t('browse.grade', { ns: 'industry', grade: l.quality_grade })}
+                          </motion.span>
+                        </div>
+                      )}
+                      
+                      {/* Cluster Badge */}
+                      {isCluster && (
+                        <div className="absolute bottom-3 left-3 z-10">
+                          <motion.span
+                            whileHover={{ scale: 1.03 }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-success/80 text-white shadow-lg shadow-success/40 backdrop-blur-xl"
+                          >
+                            <Zap className="w-3.5 h-3.5" /> {t('browse.clusterDeal', { ns: 'industry', defaultValue: 'Cluster Deal' })}
+                          </motion.span>
+                        </div>
+                      )}
+                    </div>
                   )}
-                  <button
-                    onClick={() => handleBuyListing(l)}
-                    className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <ShoppingCart className="w-3.5 h-3.5" /> {t('browse.sendRequest', { ns: 'industry' })}
-                  </button>
-                </div>
+
+                  <div className="relative z-10 p-5">
+                    {/* Title */}
+                    <div className="mb-4">
+                      <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-1">
+                        <Wheat className="w-5 h-5 text-primary" />
+                        {l.crop_type}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">{t('browse.availableQuantity', { ns: 'industry', defaultValue: 'Available quantity: {{quantity}} tons', quantity: Number(l.quantity) })}</p>
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl p-3 mb-4 border border-primary/20">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase">{t('browse.price', { ns: 'industry', defaultValue: 'Price' })}</span>
+                        <span className="text-lg font-bold text-primary">₹{Number(l.adjusted_price_per_ton)}/ton</span>
+                      </div>
+                      <div className="h-px bg-gradient-to-r from-primary/20 to-transparent mb-2" />
+                      <p className="text-xs text-muted-foreground">
+                        {t('browse.total', { ns: 'industry', value: `₹${Number(l.total_value).toLocaleString()}` })}
+                      </p>
+                    </div>
+
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
+                      {dist !== null && (
+                        <div className="bg-card/50 rounded-lg p-2 border border-border/30">
+                          <p className="text-muted-foreground mb-0.5">{t('browse.distance', { ns: 'industry', defaultValue: 'Distance' })}</p>
+                          <p className="font-bold text-primary flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5" /> {t('browse.distanceAway', { ns: 'industry', distance: Number(dist.toFixed(1)) })}
+                          </p>
+                        </div>
+                      )}
+                      {l.moisture_level && (
+                        <div className="bg-card/50 rounded-lg p-2 border border-border/30">
+                          <p className="text-muted-foreground mb-0.5">{t('browse.moistureLabel', { ns: 'industry', defaultValue: 'Moisture' })}</p>
+                          <p className="font-bold text-accent">{Number(l.moisture_level)}%</p>
+                        </div>
+                      )}
+                      {l.ai_confidence && (
+                        <div className="bg-card/50 rounded-lg p-2 border border-border/30">
+                          <p className="text-muted-foreground mb-0.5">{t('browse.aiQuality', { ns: 'industry', defaultValue: 'AI Quality' })}</p>
+                          <p className="font-bold text-success">{(Number(l.ai_confidence) * 100).toFixed(0)}%</p>
+                        </div>
+                      )}
+                      {l.address && (
+                        <div className="bg-card/50 rounded-lg p-2 border border-border/30 col-span-2">
+                          <p className="text-muted-foreground mb-0.5">{t('browse.location', { ns: 'industry', defaultValue: 'Location' })}</p>
+                          <p className="font-bold text-foreground truncate">{l.address}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* CTA Button */}
+                    <motion.button
+                      onClick={() => handleBuyListing(l)}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary to-accent text-white text-xs font-bold hover:opacity-95 transition-all duration-200 flex items-center justify-center gap-2"
+                    >
+                      <ShoppingCart className="w-4 h-4" /> {t('browse.sendRequest', { ns: 'industry' })}
+                    </motion.button>
+                  </div>
+                </motion.div>
               );
             })}
           </div>
