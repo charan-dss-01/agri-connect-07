@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminTransactions from "./pages/AdminTransactions";
 import AdminFraudReports from "./pages/AdminFraudReports";
+import AdminComplaints from "./pages/AdminComplaints";
 import ProfileSettings from "./pages/ProfileSettings";
 import NotFound from "./pages/NotFound";
 
@@ -47,6 +48,7 @@ const AppRoutes = () => (
       <Route path="/admin/users" element={<ProtectedRoute allowedRole="admin"><AdminUsers /></ProtectedRoute>} />
       <Route path="/admin/transactions" element={<ProtectedRoute allowedRole="admin"><AdminTransactions /></ProtectedRoute>} />
       <Route path="/admin/fraud-reports" element={<ProtectedRoute allowedRole="admin"><AdminFraudReports /></ProtectedRoute>} />
+      <Route path="/admin/complaints" element={<ProtectedRoute allowedRole="admin"><AdminComplaints /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute allowedRole="admin"><ProfileSettings /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>

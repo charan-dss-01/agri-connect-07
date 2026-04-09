@@ -42,6 +42,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         { icon: Users, label: t('navigation.users'), path: '/admin/users' },
         { icon: BarChart3, label: t('navigation.transactions'), path: '/admin/transactions' },
         { icon: ShieldAlert, label: t('navigation.fraudReports'), path: '/admin/fraud-reports' },
+        { icon: ShieldAlert, label: 'Complaints', path: '/admin/complaints' },
         { icon: Settings, label: t('navigation.settings'), path: '/admin/settings' },
       ];
 
