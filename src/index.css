@@ -1,3 +1,5 @@
+@import 'leaflet/dist/leaflet.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -138,4 +140,45 @@
   .shadow-elevated {
     box-shadow: 0 12px 40px -8px hsl(var(--primary) / 0.15), 0 4px 12px hsl(var(--primary) / 0.06);
   }
+}
+
+/* Leaflet Map Styles */
+.leaflet-container {
+  font-family: inherit;
+  background: white !important;
+  outline: 0;
+}
+
+.leaflet-container, .leaflet-container * {
+  box-sizing: border-box !important;
+}
+
+.leaflet-control {
+  box-sizing: border-box !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 2 !important;
+}
+
+.leaflet-tile-pane img {
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.leaflet-image-layer {
+  /* Force tile rendering */
+}
+
+/* Ensure map layers render properly */
+.leaflet-overlay-pane {
+  z-index: 4 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 6 !important;
 }

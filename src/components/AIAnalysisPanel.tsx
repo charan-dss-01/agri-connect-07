@@ -187,13 +187,13 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
                 <p className="text-sm font-bold">{result.detectedCropType || cropType}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-card rounded-lg p-2.5">
+            {/* <div className="flex items-center gap-2 bg-card rounded-lg p-2.5">
               <Gauge className="w-4 h-4 text-info" />
               <div>
                 <p className="text-[10px] text-muted-foreground">{t('ai.confidence')}</p>
                 <p className="text-sm font-bold text-info">{result.confidence}%</p>
               </div>
-            </div>
+            </div> */}
             <div className="flex items-center gap-2 bg-card rounded-lg p-2.5">
               <Droplets className="w-4 h-4 text-info" />
               <div>
@@ -212,7 +212,7 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
             </div>
           </div>
 
-          {result.analysis && (
+          {/* {result.analysis && (
             <div className="flex items-start gap-2 bg-card rounded-lg p-2.5">
               <FileText className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <div>
@@ -220,7 +220,7 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
                 <p className="text-xs leading-relaxed">{result.analysis}</p>
               </div>
             </div>
-          )}
+          )} */}
 
           {result.adjustedPrice !== (CROP_PRICES[result.detectedCropType || cropType] || CROP_PRICES[cropType]) && (
             <div className="text-xs bg-warning/10 text-warning rounded-lg p-2 text-center">

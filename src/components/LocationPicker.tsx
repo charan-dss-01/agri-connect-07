@@ -18,10 +18,10 @@ export default function LocationPicker({ lat, lng, address, onLocationChange, co
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [showMap, setShowMap] = useState(false);
-  const [mapLoaded, setMapLoaded] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
   const markerRef = useRef<any>(null);
+  const mapInitialized = useRef(false);
 
   const reverseGeocode = async (latitude: number, longitude: number) => {
     try {
@@ -76,61 +76,88 @@ export default function LocationPicker({ lat, lng, address, onLocationChange, co
   };
 
   useEffect(() => {
-    if (!showMap || !mapRef.current || mapLoaded) return;
+    // Only initialize map once when showMap becomes true
+    if (!showMap || mapInitialized.current || !mapRef.current) return;
 
     const loadMap = async () => {
-      const L = await import('leaflet');
-      await import('leaflet/dist/leaflet.css');
+      try {
+        const L = await import('leaflet');
 
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-      });
+        // Configure marker icons
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        });
 
-      const map = L.map(mapRef.current!).setView([mapLat, mapLng], 10);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
-      }).addTo(map);
+        if (!mapRef.current || leafletMap.current) return;
 
-      const marker = L.marker([mapLat, mapLng], { draggable: true }).addTo(map);
-      marker.on('dragend', async () => {
-        const pos = marker.getLatLng();
-        const newAddress = await reverseGeocode(pos.lat, pos.lng);
-        setMapLat(pos.lat);
-        setMapLng(pos.lng);
-        setMapAddress(newAddress);
-        onLocationChange(pos.lat, pos.lng, newAddress);
-      });
+        const map = L.map(mapRef.current, { 
+          scrollWheelZoom: true,
+          dragging: true,
+          tap: true
+        }).setView([mapLat, mapLng], 13);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors',
+          maxZoom: 19,
+          subdomains: 'abc',
+          crossOrigin: true,
+        }).addTo(map);
 
-      map.on('click', async (e: any) => {
-        marker.setLatLng(e.latlng);
-        const newAddress = await reverseGeocode(e.latlng.lat, e.latlng.lng);
-        setMapLat(e.latlng.lat);
-        setMapLng(e.latlng.lng);
-        setMapAddress(newAddress);
-        onLocationChange(e.latlng.lat, e.latlng.lng, newAddress);
-      });
+        const marker = L.marker([mapLat, mapLng], { draggable: true }).addTo(map);
+        
+        marker.on('dragend', async () => {
+          const pos = marker.getLatLng();
+          const newAddress = await reverseGeocode(pos.lat, pos.lng);
+          setMapLat(pos.lat);
+          setMapLng(pos.lng);
+          setMapAddress(newAddress);
+          onLocationChange(pos.lat, pos.lng, newAddress);
+        });
 
-      leafletMap.current = map;
-      markerRef.current = marker;
-      setMapLoaded(true);
+        map.on('click', async (e: any) => {
+          marker.setLatLng(e.latlng);
+          const newAddress = await reverseGeocode(e.latlng.lat, e.latlng.lng);
+          setMapLat(e.latlng.lat);
+          setMapLng(e.latlng.lng);
+          setMapAddress(newAddress);
+          onLocationChange(e.latlng.lat, e.latlng.lng, newAddress);
+        });
 
-      setTimeout(() => map.invalidateSize(), 100);
+        leafletMap.current = map;
+        markerRef.current = marker;
+        mapInitialized.current = true;
+
+        // Trigger map resize after CSS is applied to ensure tiles load
+        setTimeout(() => {
+          if (map && mapRef.current) {
+            map.invalidateSize();
+            // Ensure tiles are loaded
+            map.eachLayer((layer: any) => {
+              if (layer.redraw) layer.redraw();
+            });
+          }
+        }, 150);
+      } catch (error) {
+        console.error('Failed to load map:', error);
+        mapInitialized.current = false;
+      }
     };
 
     void loadMap();
 
     return () => {
-      if (leafletMap.current) {
+      // Only cleanup when map is hidden
+      if (!showMap && leafletMap.current) {
         leafletMap.current.remove();
         leafletMap.current = null;
         markerRef.current = null;
-        setMapLoaded(false);
+        mapInitialized.current = false;
       }
     };
-  }, [showMap, mapLat, mapLng, mapLoaded, onLocationChange]);
+  }, [showMap]);
 
   return (
     <div className="space-y-2">
@@ -181,8 +208,8 @@ export default function LocationPicker({ lat, lng, address, onLocationChange, co
           </div>
           <div
             ref={mapRef}
-            className={`rounded-lg border border-border overflow-hidden ${compact ? 'h-48' : 'h-64'}`}
-            style={{ zIndex: 0 }}
+            className={`rounded-lg border border-border overflow-hidden w-full ${compact ? 'h-48' : 'h-64'}`}
+            style={{ zIndex: 0, minHeight: compact ? '12rem' : '16rem' }}
           />
           <p className="text-[10px] text-muted-foreground">{t('location.mapHint')}</p>
         </div>

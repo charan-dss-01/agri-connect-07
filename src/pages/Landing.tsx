@@ -1,34 +1,245 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Leaf, ArrowRight, Factory, Wheat, BarChart3, Sprout, Recycle, TrendingUp } from 'lucide-react';
+import {
+  Leaf, ArrowRight, Factory, Wheat, BarChart3, Sprout, Recycle, TrendingUp,
+  Shield, Zap, Globe, Trophy, MessageCircle, Gauge, ChevronRight, Menu, X,
+  CheckCircle2, AlertCircle, ChevronLeft
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { fallbackLanguage, languageLocales } from '@/i18n/resources';
+import { motion, AnimatePresence } from 'framer-motion';
+import useEmblaCarousel from 'embla-carousel-react';
 
-function useCountUp(target: number, duration = 1200) {
+function useCountUp(target: number, duration = 2000) {
   const [value, setValue] = useState(0);
-  const prevTarget = useRef(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef(null);
 
   useEffect(() => {
-    if (target === prevTarget.current) return;
-    const start = prevTarget.current;
-    prevTarget.current = target;
-    const startTime = performance.now();
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !isVisible) {
+        setIsVisible(true);
+      }
+    });
 
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (!isVisible || target === 0) return;
+    
+    const startTime = performance.now();
     const tick = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(start + (target - start) * eased));
+      setValue(Math.round(target * eased));
       if (progress < 1) requestAnimationFrame(tick);
     };
 
     requestAnimationFrame(tick);
-  }, [target, duration]);
+  }, [isVisible, target, duration]);
 
-  return value;
+  return { value, ref };
 }
+
+// Success Stories Carousel Component
+const SuccessStoriesCarousel = () => {
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'start',
+    loop: true,
+    breakpoints: {
+      '(max-width: 768px)': { slidesToScroll: 1 },
+      '(min-width: 769px)': { slidesToScroll: 3 },
+    },
+  });
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+  const scrollTo = useCallback((index: number) => emblaApi?.scrollTo(index), [emblaApi]);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+    setCanScrollPrev(emblaApi.canScrollPrev());
+    setCanScrollNext(emblaApi.canScrollNext());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    setScrollSnaps(emblaApi.scrollSnapList());
+    emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+      emblaApi.off('reInit', onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  const stories = [
+    {
+      id: 1,
+      name: 'Rajesh Kumar',
+      role: 'Farmer',
+      location: 'Punjab',
+      income: '₹2.5L',
+      story: 'Converted 50 tons of wheat residue into income in just 3 months',
+      icon: Wheat
+    },
+    {
+      id: 2,
+      name: 'Priya Industries',
+      role: 'Buyer',
+      location: 'Haryana',
+      impact: '500 tons',
+      story: 'Found reliable biomass suppliers at 40% lower cost through AgriConnect',
+      icon: Factory
+    },
+    {
+      id: 3,
+      name: 'Farmer Collective',
+      role: 'Community',
+      location: 'Maharashtra',
+      group: '250+ farmers',
+      story: 'Built sustainable income stream while reducing regional air pollution',
+      icon: Sprout
+    },
+    {
+      id: 4,
+      name: 'Amit Singh',
+      role: 'Farmer',
+      location: 'Uttar Pradesh',
+      income: '₹1.8L',
+      story: 'Reduced field burning emissions by 60% while earning sustainable income',
+      icon: Globe
+    },
+    {
+      id: 5,
+      name: 'Green Technologies',
+      role: 'Industry Partner',
+      location: 'Karnataka',
+      impact: '800 tons',
+      story: 'Reduced sourcing costs and ensured supply chain sustainability',
+      icon: Zap
+    },
+  ];
+
+  return (
+    <div className="relative">
+      {/* Carousel Container */}
+      <div className="overflow-hidden" ref={emblaRef}>
+        <div className="flex">
+          {stories.map((story, index) => (
+            <motion.div
+              key={story.id}
+              className="flex-[0_0_100%] md:flex-[0_0_33.333%] min-w-0 px-3 md:px-4"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              viewport={{ once: true }}
+            >
+              <div className="group h-full">
+                <div className="relative h-full bg-gradient-to-br from-white/60 to-white/30 dark:from-white/10 dark:to-white/0 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-2xl p-6 md:p-8 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl overflow-hidden">
+                  {/* Background gradient overlay */}
+                  <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-primary/10 blur-3xl group-hover:bg-primary/20 transition-all duration-500" />
+                  
+                  <div className="relative z-10">
+                    {/* Top section with icon and verification */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg md:text-xl font-bold text-foreground mb-1">{story.name}</h3>
+                        <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1">
+                          <span>{story.role}</span>
+                          <span>•</span>
+                          <span className="text-xs">{story.location}</span>
+                        </p>
+                      </div>
+                      <motion.div whileHover={{ scale: 1.2 }} transition={{ duration: 0.2 }}>
+                        <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />
+                      </motion.div>
+                    </div>
+
+                    {/* Icon */}
+                    <div className="mb-4">
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                        <story.icon className="h-6 w-6 text-primary" />
+                      </div>
+                    </div>
+
+                    {/* Story text */}
+                    <p className="text-sm md:text-base text-muted-foreground mb-6 leading-relaxed group-hover:text-foreground/80 transition-colors">
+                      {story.story}
+                    </p>
+
+                    {/* Impact/Income metric */}
+                    <div className="pt-4 border-t border-white/10">
+                      <p className="text-xs text-muted-foreground mb-1">Impact</p>
+                      <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                        {story.income || story.impact || story.group}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="flex items-center justify-between mt-8">
+        <div className="flex gap-2">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={scrollPrev}
+            disabled={!canScrollPrev}
+            className="p-2 rounded-full bg-primary/20 hover:bg-primary/30 text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronLeft size={20} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={scrollNext}
+            disabled={!canScrollNext}
+            className="p-2 rounded-full bg-primary/20 hover:bg-primary/30 text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronRight size={20} />
+          </motion.button>
+        </div>
+
+        {/* Dots Indicators */}
+        <div className="flex gap-2">
+          {scrollSnaps.map((_, index) => (
+            <motion.button
+              key={index}
+              onClick={() => scrollTo(index)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                index === selectedIndex ? 'bg-primary w-6' : 'bg-primary/30 w-2 hover:bg-primary/50'
+              }`}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.95 }}
+            />
+          ))}
+        </div>
+
+        {/* Slide counter */}
+        <div className="text-xs text-muted-foreground font-medium">
+          {selectedIndex + 1} / {scrollSnaps.length}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface StatData {
   farmers: number;
@@ -39,6 +250,8 @@ interface StatData {
 
 const Landing = () => {
   const [raw, setRaw] = useState<StatData>({ farmers: 0, industries: 0, biomass: 0, co2: 0 });
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t, i18n } = useTranslation(['common', 'landing']);
   const activeLanguage = ((i18n.resolvedLanguage ?? fallbackLanguage).split('-')[0] as keyof typeof languageLocales);
   const locale = languageLocales[activeLanguage] ?? languageLocales.en;
@@ -58,143 +271,636 @@ const Landing = () => {
 
   useEffect(() => {
     fetchStats();
-
     const channel = supabase
       .channel('homepage-stats')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchStats())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'residue_listings' }, () => fetchStats())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchStats())
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [fetchStats]);
 
-  const farmersAnimated = useCountUp(raw.farmers);
-  const industriesAnimated = useCountUp(raw.industries);
-  const biomassAnimated = useCountUp(raw.biomass);
-  const co2Animated = useCountUp(raw.co2);
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const farmersCount = useCountUp(raw.farmers);
+  const industriesCount = useCountUp(raw.industries);
+  const biomassCount = useCountUp(raw.biomass);
+  const co2Count = useCountUp(raw.co2);
 
   const features = [
-    {
-      icon: Wheat,
-      title: t('features.farmer.title', { ns: 'landing' }),
-      desc: t('features.farmer.description', { ns: 'landing' }),
-    },
-    {
-      icon: Factory,
-      title: t('features.industry.title', { ns: 'landing' }),
-      desc: t('features.industry.description', { ns: 'landing' }),
-    },
-    {
-      icon: BarChart3,
-      title: t('features.analytics.title', { ns: 'landing' }),
-      desc: t('features.analytics.description', { ns: 'landing' }),
-    },
+    { icon: Wheat, title: 'AI Crop Classification', description: 'Smart residue detection and classification' },
+    { icon: Zap, title: 'Smart Matching', description: 'AI-powered industry matching system' },
+    { icon: TrendingUp, title: 'Price Optimization', description: 'Dynamic pricing based on demand' },
+    { icon: Globe, title: 'Logistics Hub', description: 'Optimized transport & delivery' },
+    { icon: Trophy, title: 'Gamified Rewards', description: 'Green streaks & carbon points' },
+    { icon: Shield, title: 'Trust System', description: 'Verified profiles & secure transactions' },
   ];
 
-  const stats = [
-    { value: farmersAnimated > 0 ? `${farmersAnimated}+` : '0', label: t('stats.farmersRegistered', { ns: 'landing' }), icon: Sprout },
-    { value: industriesAnimated > 0 ? `${industriesAnimated}+` : '0', label: t('stats.industriesConnected', { ns: 'landing' }), icon: Factory },
-    { value: biomassAnimated > 0 ? biomassAnimated.toLocaleString(locale) : '0', label: t('stats.tonsBiomassTraded', { ns: 'landing' }), icon: Recycle },
-    { value: co2Animated > 0 ? `${co2Animated}` : '0', label: t('stats.tonsCo2Saved', { ns: 'landing' }), icon: TrendingUp },
+  const solutionSteps = [
+    { number: '1', title: 'List Residue', description: 'Farmers post crop waste details & location', icon: Wheat },
+    { number: '2', title: 'AI Matching', description: 'System finds nearby industries in need', icon: Zap },
+    { number: '3', title: 'Trade & Earn', description: 'Secure transaction, income earned', icon: TrendingUp },
+  ];
+
+  const impactStats = [
+    { value: co2Count.value, label: 'Tons CO₂ Saved', suffix: '', icon: Globe },
+    { value: farmersCount.value, label: 'Farmers Empowered', suffix: '+', icon: Sprout },
+    { value: industriesCount.value, label: 'Industries Connected', suffix: '+', icon: Factory },
+    { value: biomassCount.value, label: 'Tons Traded', suffix: '', icon: Recycle },
+  ];
+
+  const problemStats = [
+    { value: '120M', label: 'Tons of crop residue burned annually' },
+    { value: '1.2B', label: 'Tons of CO₂ emitted yearly' },
+    { value: '₹0', label: 'Income for farmers from waste' },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-sm md:px-12">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Leaf className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="text-lg font-bold tracking-tight">{t('brand.name', { ns: 'common' })}</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <LanguageSwitcher />
-          <Link to="/login" className="px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-            {t('navbar.login', { ns: 'landing' })}
-          </Link>
-          <Link to="/login?mode=register" className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
-            {t('navbar.getStarted', { ns: 'landing' })}
-          </Link>
-        </div>
-      </nav>
-
-      <section className="gradient-hero px-6 py-20 md:px-12 md:py-32">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-4 py-1.5">
-            <Sprout className="h-3.5 w-3.5 text-primary-foreground/80" />
-            <span className="text-xs font-medium text-primary-foreground/80">{t('hero.badge', { ns: 'landing' })}</span>
-          </div>
-          <h1 className="mb-6 text-4xl font-bold leading-tight text-primary-foreground md:text-6xl">
-            {t('hero.titleLineOne', { ns: 'landing' })}
-            <span className="block text-accent">{t('hero.titleLineTwo', { ns: 'landing' })}</span>
-          </h1>
-          <p className="mx-auto mb-10 max-w-2xl text-lg text-primary-foreground/70 md:text-xl">
-            {t('hero.description', { ns: 'landing' })}
-          </p>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link
-              to="/login?mode=register&role=farmer"
-              className="flex items-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-sm font-semibold text-accent-foreground shadow-elevated transition-all hover:brightness-110"
-            >
-              {t('hero.farmerCta', { ns: 'landing' })} <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              to="/login?mode=register&role=industry"
-              className="flex items-center gap-2 rounded-xl border border-primary-foreground/30 bg-primary-foreground/10 px-8 py-3.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-foreground/20"
-            >
-              {t('hero.industryCta', { ns: 'landing' })} <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative z-10 -mt-12 px-6 md:px-12">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-4 md:grid-cols-4">
-          {stats.map((stat, index) => (
-            <div key={index} className="animate-fade-in rounded-xl bg-card p-5 text-center shadow-card" style={{ animationDelay: `${index * 100}ms` }}>
-              <stat.icon className="mx-auto mb-2 h-6 w-6 text-primary" />
-              <p className="tabular-nums text-2xl font-bold text-foreground">{stat.value}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{stat.label}</p>
-              <div className="mx-auto mt-2 h-1 w-1 animate-pulse rounded-full bg-success" title={t('stats.live', { ns: 'landing' })} />
+    <div className="min-h-screen overflow-x-hidden bg-background">
+      {/* NAVBAR */}
+      <motion.nav
+        initial={{ backgroundColor: 'rgba(0,0,0,0)' }}
+        animate={scrolled ? { backgroundColor: 'rgba(28, 25, 23, 0.9)', backdropFilter: 'blur(10px)' } : { backgroundColor: 'rgba(0,0,0,0)' }}
+        className="sticky top-0 z-50 border-b border-border/0 transition-all duration-300 px-6 py-4 md:px-12"
+      >
+        <div className="mx-auto max-w-7xl flex items-center justify-between">
+          {/* Logo */}
+          <motion.div className="flex items-center gap-2.5" whileHover={{ scale: 1.05 }}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
+              <Leaf className="h-6 w-6 text-white" />
             </div>
-          ))}
+            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              AgriConnect
+            </span>
+          </motion.div>
+
+          {/* Desktop Menu */}
+          <div className="hidden md:flex items-center gap-12">
+            <a href="#hero" onClick={(e) => { e.preventDefault(); document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">Home</a>
+            <a href="#solution" onClick={(e) => { e.preventDefault(); document.getElementById('solution')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">Solution</a>
+            <a href="#features" onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">Features</a>
+            <a href="#how-it-works" onClick={(e) => { e.preventDefault(); document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">How it Works</a>
+            <a href="#impact" onClick={(e) => { e.preventDefault(); document.getElementById('impact')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">Impact</a>
+          </div>
+
+          {/* Right Nav Items */}
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block">
+              <LanguageSwitcher />
+            </div>
+            <Link to="/login" className="hidden md:block px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition">
+              {t('navbar.login', { ns: 'landing' })}
+            </Link>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link
+                to="/login?mode=register"
+                className="px-6 py-2 text-sm font-semibold bg-gradient-to-r from-primary to-accent text-white rounded-lg hover:shadow-lg transition-all"
+              >
+                Get Started
+              </Link>
+            </motion.div>
+            <button
+              className="md:hidden text-foreground"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden mt-4 space-y-4 pb-4 border-t border-border/20 pt-4"
+            >
+              <a href="#hero" onClick={(e) => { e.preventDefault(); document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">Home</a>
+              <a href="#solution" onClick={(e) => { e.preventDefault(); document.getElementById('solution')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">Solution</a>
+              <a href="#features" onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">Features</a>
+              <a href="#how-it-works" onClick={(e) => { e.preventDefault(); document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">How it Works</a>
+              <a href="#impact" onClick={(e) => { e.preventDefault(); document.getElementById('impact')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">Impact</a>
+              <Link to="/login" className="block text-sm font-medium text-muted-foreground">Login</Link>
+              <LanguageSwitcher />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.nav>
+
+      {/* HERO SECTION */}
+      <section id="hero" className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-accent/10" />
+        
+        {/* Animated Background Elements */}
+        <motion.div
+          className="absolute top-20 right-10 w-96 h-96 rounded-full bg-primary/20 blur-3xl"
+          animate={{ float: [0, 30, 0] }}
+          transition={{ duration: 6, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute bottom-20 left-10 w-80 h-80 rounded-full bg-accent/20 blur-3xl"
+          animate={{ float: [0, -30, 0] }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
+
+        <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 py-20 md:py-32 w-full">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <motion.div
+                className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2 mb-6"
+                whileHover={{ scale: 1.05 }}
+              >
+                <Sprout className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-primary">Sustainable Agriculture & Waste Management</span>
+              </motion.div>
+
+              <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
+                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  Turning Crop Waste
+                </span>
+                <br />
+                <span className="text-foreground">into Green Wealth</span>
+                <span className="text-4xl md:text-5xl"> 🌱</span>
+              </h1>
+
+              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                AgriConnect empowers farmers to convert crop residue into income while reducing pollution and enabling sustainable industries.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link
+                    to="/login?mode=register&role=farmer"
+                    className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                  >
+                    Start as Farmer <ArrowRight size={18} />
+                  </Link>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link
+                    to="/login?mode=register&role=industry"
+                    className="flex items-center justify-center gap-2 px-8 py-4 border-2 border-primary/30 text-foreground rounded-xl font-semibold hover:bg-primary/5 transition-all"
+                  >
+                    Join as Industry <ArrowRight size={18} />
+                  </Link>
+                </motion.div>
+              </div>
+            </motion.div>
+
+            {/* Right - Floating Cards */}
+            <motion.div
+              className="relative h-full"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              {/* Card 1 */}
+              <motion.div
+                className="absolute top-0 right-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/20 rounded-2xl p-6 w-64 shadow-xl"
+                animate={{ y: [0, 20, 0] }}
+                transition={{ duration: 4, repeat: Infinity }}
+              >
+                <Sprout className="h-8 w-8 text-accent mb-3" />
+                <p className="text-xs text-muted-foreground mb-2">Farmers Earning</p>
+                <p className="text-2xl font-bold text-foreground">₹48.5L+</p>
+              </motion.div>
+
+              {/* Card 2 */}
+              <motion.div
+                className="absolute top-40 left-10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/20 rounded-2xl p-6 w-64 shadow-xl"
+                animate={{ y: [0, -20, 0] }}
+                transition={{ duration: 4, repeat: Infinity, delay: 1 }}
+              >
+                <Globe className="h-8 w-8 text-green-500 mb-3" />
+                <p className="text-xs text-muted-foreground mb-2">CO₂ Saved</p>
+                <p className="text-2xl font-bold text-foreground">{co2Count.value}K+ Tons</p>
+              </motion.div>
+
+              {/* Card 3 */}
+              <motion.div
+                className="absolute bottom-10 right-10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/20 rounded-2xl p-6 w-64 shadow-xl"
+                animate={{ y: [0, 20, 0] }}
+                transition={{ duration: 4, repeat: Infinity, delay: 2 }}
+              >
+                <Factory className="h-8 w-8 text-blue-500 mb-3" />
+                <p className="text-xs text-muted-foreground mb-2">Industries Matched</p>
+                <p className="text-2xl font-bold text-foreground">{industriesCount.value}+</p>
+              </motion.div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      <section className="px-6 py-20 md:px-12">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="mb-4 text-center text-3xl font-bold">{t('features.title', { ns: 'landing' })}</h2>
-          <p className="mx-auto mb-12 max-w-lg text-center text-muted-foreground">
-            {t('features.description', { ns: 'landing' })}
-          </p>
-          <div className="grid gap-6 md:grid-cols-3">
-            {features.map((feature, index) => (
-              <div key={index} className="animate-fade-in rounded-xl bg-card p-6 shadow-card transition-shadow hover:shadow-elevated" style={{ animationDelay: `${index * 150}ms` }}>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                  <feature.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mb-2 text-lg font-semibold">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.desc}</p>
-              </div>
+      {/* PROBLEM SECTION */}
+      <section id="problem" className="py-20 md:py-32 px-6 md:px-12 bg-gradient-to-b from-background to-red-950/5">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <div className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 mb-4">
+              <AlertCircle className="h-4 w-4 text-red-500" />
+              <span className="text-xs font-semibold text-red-600">The Crisis</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">The Problem We're Solving</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Millions of tons of crop residue are burned every year, causing severe air pollution and wasting valuable resources that could benefit industries and farmers alike.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {problemStats.map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="bg-gradient-to-br from-red-50 to-red-50/50 dark:from-red-950/20 dark:to-red-950/10 rounded-2xl p-8 border border-red-200/50 dark:border-red-900/30"
+              >
+                <div className="mb-4 text-4xl font-bold text-red-600">{stat.value}</div>
+                <p className="text-foreground font-medium">{stat.label}</p>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-border px-6 py-8 text-center md:px-12">
-        <div className="mb-2 flex items-center justify-center gap-2">
-          <Leaf className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">{t('brand.name', { ns: 'common' })}</span>
+      {/* SOLUTION SECTION */}
+      <section id="solution" className="py-20 md:py-32 px-6 md:px-12">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Our Solution</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              A smart platform connecting farmers with industries for sustainable waste transformation
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {solutionSteps.map((step, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -10, transition: { duration: 0.3 } }}
+              >
+                <div className="relative">
+                  <div className="absolute -top-5 left-0 w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg z-10">
+                    {step.number}
+                  </div>
+                  <div className="bg-gradient-to-br from-white/50 to-white/20 dark:from-white/5 dark:to-white/0 backdrop-blur-md border border-white/20 rounded-2xl p-8 pt-16 h-full">
+                    <step.icon className="h-10 w-10 text-primary mb-4" />
+                    <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
+                    <p className="text-muted-foreground">{step.description}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} {t('brand.name', { ns: 'common' })}. {t('footer.caption', { ns: 'landing' })}
-        </p>
+      </section>
+
+      {/* FEATURES SECTION */}
+      <section id="features" className="py-20 md:py-32 px-6 md:px-12 bg-gradient-to-b from-background to-primary/5">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Powerful Features</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Everything you need to succeed in the circular economy
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -10, transition: { duration: 0.3 } }}
+                className="group cursor-pointer"
+              >
+                <div className="bg-gradient-to-br from-white/50 to-white/20 dark:from-white/5 dark:to-white/0 backdrop-blur-md border border-white/20 group-hover:border-primary/50 rounded-2xl p-8 transition-all duration-300 h-full shadow-lg group-hover:shadow-xl">
+                  <div className="bg-gradient-to-br from-primary/20 to-accent/20 w-14 h-14 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <feature.icon className="h-7 w-7 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
+                  <p className="text-muted-foreground">{feature.description}</p>
+                  <div className="mt-6 flex items-center text-primary font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                    Learn more <ChevronRight size={18} className="ml-2" />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* IMPACT METRICS SECTION */}
+      <section id="impact" className="py-20 md:py-32 px-6 md:px-12 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Real Impact, Real Numbers</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              See the difference AgriConnect is making in real-time
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-4 gap-8">
+            {impactStats.map((stat, index) => {
+              const statData = stat.icon === Globe ? co2Count : 
+                                     stat.icon === Sprout ? farmersCount :
+                                     stat.icon === Factory ? industriesCount :
+                                     biomassCount;
+              return (
+                <motion.div
+                  key={index}
+                  ref={statData.ref}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="group cursor-pointer"
+                >
+                  <div className="bg-gradient-to-br from-white/50 to-white/20 dark:from-white/10 dark:to-white/0 backdrop-blur-md border border-white/20 group-hover:border-primary/50 rounded-2xl p-8 text-center transition-all duration-300 group-hover:shadow-xl">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 mb-6 group-hover:scale-110 transition-transform">
+                      <stat.icon className="h-8 w-8 text-primary" />
+                    </div>
+                    <div className="text-5xl font-bold mb-2 text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text">
+                      {statData.value.toLocaleString(locale, { maximumFractionDigits: 0 })}{stat.suffix}
+                    </div>
+                    <p className="text-muted-foreground">{stat.label}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS SECTION */}
+      <section id="how-it-works" className="py-20 md:py-32 px-6 md:px-12">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">How It Works</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              A seamless flow from crop residue to sustainable value creation
+            </p>
+          </motion.div>
+
+          <div className="relative">
+            {/* Desktop Flow */}
+            <div className="hidden md:flex items-center justify-between">
+              {['Farmer', 'Listing', 'Matching', 'Transport', 'Industry', 'Impact'].map((step, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="flex flex-col items-center"
+                >
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-lg shadow-lg mb-4">
+                    {index + 1}
+                  </div>
+                  <p className="text-sm font-semibold text-center">{step}</p>
+                  {index < 5 && (
+                    <ChevronRight className="absolute w-6 h-6 text-primary/30 transform translate-x-20" style={{ top: '2rem' }} />
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Mobile Flow */}
+            <div className="md:hidden space-y-4">
+              {['Farmer Lists Residue', 'AI System Searches', 'Finds Matching Industry', 'Arranges Transport', 'Secure Transaction', 'Carbon Impact Recorded'].map((step, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="flex items-center gap-4"
+                >
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold">
+                    {index + 1}
+                  </div>
+                  <div className="flex-grow bg-white/5 border border-white/10 rounded-lg p-4">
+                    <p className="font-semibold">{step}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* GAMIFICATION SECTION */}
+      <section id="gamification" className="py-20 md:py-32 px-6 md:px-12 bg-gradient-to-b from-background to-primary/5">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Gamified Sustainability</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Earn rewards, build your reputation, and make a real environmental impact
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { icon: Trophy, title: 'Green Streaks', description: 'Consistent trading earns you exclusive badges and rewards', color: 'from-green-500 to-emerald-500' },
+              { icon: Gauge, title: 'Trust Score', description: 'Build a verified profile that attracts premium buyers', color: 'from-blue-500 to-cyan-500' },
+              { icon: Globe, title: 'Carbon Points', description: 'Convert CO₂ savings into transferable carbon credits', color: 'from-purple-500 to-pink-500' },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="group"
+              >
+                <div className="bg-gradient-to-br from-white/50 to-white/20 dark:from-white/5 dark:to-white/0 backdrop-blur-md border border-white/20 group-hover:border-primary/50 rounded-2xl p-8 transition-all duration-300 h-full hover:shadow-xl">
+                  <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br ${item.color} bg-opacity-20 mb-6 group-hover:scale-110 transition-transform`}>
+                    <item.icon className={`h-7 w-7`} />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3">{item.title}</h3>
+                  <p className="text-muted-foreground">{item.description}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SUCCESS STORIES */}
+      <section id="success-stories" className="py-20 md:py-32 px-6 md:px-12 bg-gradient-to-b from-background via-accent/5 to-background">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Success Stories</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Real farmers and industries transforming waste into wealth
+            </p>
+          </motion.div>
+
+          <SuccessStoriesCarousel />
+        </div>
+      </section>
+
+      {/* FINAL CTA SECTION */}
+      <section id="cta" className="py-20 md:py-32 px-6 md:px-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20" />
+        <div className="absolute top-0 right-20 w-72 h-72 rounded-full bg-accent/30 blur-3xl" />
+        <div className="absolute bottom-0 left-20 w-72 h-72 rounded-full bg-primary/30 blur-3xl" />
+
+        <div className="relative z-10 mx-auto max-w-4xl text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl md:text-6xl font-bold mb-6">
+              Join the Green Revolution 🌍
+            </h2>
+            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+              Be part of a movement that transforms agricultural waste into sustainable wealth while protecting our planet.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  to="/login?mode=register&role=farmer"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                >
+                  Start as Farmer <ArrowRight size={18} />
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  to="/login?mode=register&role=industry"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 border-primary/30 text-foreground rounded-xl font-semibold hover:bg-primary/5 transition-all"
+                >
+                  Join as Industry <ArrowRight size={18} />
+                </Link>
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="border-t border-border/20 bg-gradient-to-b from-background to-black/5 px-6 md:px-12 py-16">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid md:grid-cols-5 gap-12 mb-12">
+            {/* Logo Column */}
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
+                  <Leaf className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xl font-bold">AgriConnect</span>
+              </div>
+              <p className="text-muted-foreground max-w-sm">
+                Transforming agricultural waste into sustainable wealth while protecting our planet.
+              </p>
+            </div>
+
+            {/* Links */}
+            <div>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2">
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Features</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Pricing</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Security</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2">
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">About</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Blog</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Careers</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2">
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Privacy</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Terms</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Contact</Link></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-border/20 pt-8 flex flex-col sm:flex-row items-center justify-between">
+            <p className="text-muted-foreground text-sm">
+              &copy; {new Date().getFullYear()} AgriConnect. All rights reserved.
+            </p>
+            <div className="flex gap-4 mt-4 sm:mt-0">
+              <a href="#" className="text-muted-foreground hover:text-foreground transition">Twitter</a>
+              <a href="#" className="text-muted-foreground hover:text-foreground transition">LinkedIn</a>
+              <a href="#" className="text-muted-foreground hover:text-foreground transition">Instagram</a>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );
 };
-
 export default Landing;
