@@ -48,6 +48,7 @@ function useCountUp(target: number, duration = 2000) {
 
 // Success Stories Carousel Component
 const SuccessStoriesCarousel = () => {
+  const { t } = useTranslation('landing');
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'start',
     loop: true,
@@ -87,47 +88,47 @@ const SuccessStoriesCarousel = () => {
   const stories = [
     {
       id: 1,
-      name: 'Rajesh Kumar',
-      role: 'Farmer',
-      location: 'Punjab',
-      income: '₹2.5L',
-      story: 'Converted 50 tons of wheat residue into income in just 3 months',
+      name: t('carousel.stories.1.name', { defaultValue: 'Rajesh Kumar' }),
+      role: t('carousel.stories.1.role', { defaultValue: 'Farmer' }),
+      location: t('carousel.stories.1.location', { defaultValue: 'Punjab' }),
+      income: t('carousel.stories.1.income', { defaultValue: '₹2.5L' }),
+      story: t('carousel.stories.1.story', { defaultValue: 'Converted 50 tons of wheat residue into income in just 3 months' }),
       icon: Wheat
     },
     {
       id: 2,
-      name: 'Priya Industries',
-      role: 'Buyer',
-      location: 'Haryana',
-      impact: '500 tons',
-      story: 'Found reliable biomass suppliers at 40% lower cost through AgriConnect',
+      name: t('carousel.stories.2.name', { defaultValue: 'Priya Industries' }),
+      role: t('carousel.stories.2.role', { defaultValue: 'Buyer' }),
+      location: t('carousel.stories.2.location', { defaultValue: 'Haryana' }),
+      impact: t('carousel.stories.2.impact', { defaultValue: '500 tons' }),
+      story: t('carousel.stories.2.story', { defaultValue: 'Found reliable biomass suppliers at 40% lower cost through AgriConnect' }),
       icon: Factory
     },
     {
       id: 3,
-      name: 'Farmer Collective',
-      role: 'Community',
-      location: 'Maharashtra',
-      group: '250+ farmers',
-      story: 'Built sustainable income stream while reducing regional air pollution',
+      name: t('carousel.stories.3.name', { defaultValue: 'Farmer Collective' }),
+      role: t('carousel.stories.3.role', { defaultValue: 'Community' }),
+      location: t('carousel.stories.3.location', { defaultValue: 'Maharashtra' }),
+      group: t('carousel.stories.3.group', { defaultValue: '250+ farmers' }),
+      story: t('carousel.stories.3.story', { defaultValue: 'Built sustainable income stream while reducing regional air pollution' }),
       icon: Sprout
     },
     {
       id: 4,
-      name: 'Amit Singh',
-      role: 'Farmer',
-      location: 'Uttar Pradesh',
-      income: '₹1.8L',
-      story: 'Reduced field burning emissions by 60% while earning sustainable income',
+      name: t('carousel.stories.4.name', { defaultValue: 'Amit Singh' }),
+      role: t('carousel.stories.4.role', { defaultValue: 'Farmer' }),
+      location: t('carousel.stories.4.location', { defaultValue: 'Uttar Pradesh' }),
+      income: t('carousel.stories.4.income', { defaultValue: '₹1.8L' }),
+      story: t('carousel.stories.4.story', { defaultValue: 'Reduced field burning emissions by 60% while earning sustainable income' }),
       icon: Globe
     },
     {
       id: 5,
-      name: 'Green Technologies',
-      role: 'Industry Partner',
-      location: 'Karnataka',
-      impact: '800 tons',
-      story: 'Reduced sourcing costs and ensured supply chain sustainability',
+      name: t('carousel.stories.5.name', { defaultValue: 'Green Technologies' }),
+      role: t('carousel.stories.5.role', { defaultValue: 'Industry Partner' }),
+      location: t('carousel.stories.5.location', { defaultValue: 'Karnataka' }),
+      impact: t('carousel.stories.5.impact', { defaultValue: '800 tons' }),
+      story: t('carousel.stories.5.story', { defaultValue: 'Reduced sourcing costs and ensured supply chain sustainability' }),
       icon: Zap
     },
   ];
@@ -181,7 +182,7 @@ const SuccessStoriesCarousel = () => {
 
                     {/* Impact/Income metric */}
                     <div className="pt-4 border-t border-white/10">
-                      <p className="text-xs text-muted-foreground mb-1">Impact</p>
+                      <p className="text-xs text-muted-foreground mb-1">{t('carousel.impact', { defaultValue: 'Impact' })}</p>
                       <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                         {story.income || story.impact || story.group}
                       </p>
@@ -292,31 +293,70 @@ const Landing = () => {
   const co2Count = useCountUp(raw.co2);
 
   const features = [
-    { icon: Wheat, title: 'AI Crop Classification', description: 'Smart residue detection and classification' },
-    { icon: Zap, title: 'Smart Matching', description: 'AI-powered industry matching system' },
-    { icon: TrendingUp, title: 'Price Optimization', description: 'Dynamic pricing based on demand' },
-    { icon: Globe, title: 'Logistics Hub', description: 'Optimized transport & delivery' },
-    { icon: Trophy, title: 'Gamified Rewards', description: 'Green streaks & carbon points' },
-    { icon: Shield, title: 'Trust System', description: 'Verified profiles & secure transactions' },
+    {
+      icon: Wheat,
+      title: t('features.items.0.title', { ns: 'landing', defaultValue: 'AI Crop Classification' }),
+      description: t('features.items.0.description', { ns: 'landing', defaultValue: 'Smart residue detection and classification' }),
+    },
+    {
+      icon: Zap,
+      title: t('features.items.1.title', { ns: 'landing', defaultValue: 'Smart Matching' }),
+      description: t('features.items.1.description', { ns: 'landing', defaultValue: 'AI-powered industry matching system' }),
+    },
+    {
+      icon: TrendingUp,
+      title: t('features.items.2.title', { ns: 'landing', defaultValue: 'Price Optimization' }),
+      description: t('features.items.2.description', { ns: 'landing', defaultValue: 'Dynamic pricing based on demand' }),
+    },
+    {
+      icon: Globe,
+      title: t('features.items.3.title', { ns: 'landing', defaultValue: 'Logistics Hub' }),
+      description: t('features.items.3.description', { ns: 'landing', defaultValue: 'Optimized transport & delivery' }),
+    },
+    {
+      icon: Trophy,
+      title: t('features.items.4.title', { ns: 'landing', defaultValue: 'Gamified Rewards' }),
+      description: t('features.items.4.description', { ns: 'landing', defaultValue: 'Green streaks & carbon points' }),
+    },
+    {
+      icon: Shield,
+      title: t('features.items.5.title', { ns: 'landing', defaultValue: 'Trust System' }),
+      description: t('features.items.5.description', { ns: 'landing', defaultValue: 'Verified profiles & secure transactions' }),
+    },
   ];
 
   const solutionSteps = [
-    { number: '1', title: 'List Residue', description: 'Farmers post crop waste details & location', icon: Wheat },
-    { number: '2', title: 'AI Matching', description: 'System finds nearby industries in need', icon: Zap },
-    { number: '3', title: 'Trade & Earn', description: 'Secure transaction, income earned', icon: TrendingUp },
+    {
+      number: '1',
+      title: t('solution.steps.0.title', { ns: 'landing', defaultValue: 'List Residue' }),
+      description: t('solution.steps.0.description', { ns: 'landing', defaultValue: 'Farmers post crop waste details & location' }),
+      icon: Wheat,
+    },
+    {
+      number: '2',
+      title: t('solution.steps.1.title', { ns: 'landing', defaultValue: 'AI Matching' }),
+      description: t('solution.steps.1.description', { ns: 'landing', defaultValue: 'System finds nearby industries in need' }),
+      icon: Zap,
+    },
+    {
+      number: '3',
+      title: t('solution.steps.2.title', { ns: 'landing', defaultValue: 'Trade & Earn' }),
+      description: t('solution.steps.2.description', { ns: 'landing', defaultValue: 'Secure transaction, income earned' }),
+      icon: TrendingUp,
+    },
   ];
 
   const impactStats = [
-    { value: co2Count.value, label: 'Tons CO₂ Saved', suffix: '', icon: Globe },
-    { value: farmersCount.value, label: 'Farmers Empowered', suffix: '+', icon: Sprout },
-    { value: industriesCount.value, label: 'Industries Connected', suffix: '+', icon: Factory },
-    { value: biomassCount.value, label: 'Tons Traded', suffix: '', icon: Recycle },
+    { value: co2Count.value, label: t('impact.stats.0.label', { ns: 'landing', defaultValue: 'Tons CO2 Saved' }), suffix: '', icon: Globe },
+    { value: farmersCount.value, label: t('impact.stats.1.label', { ns: 'landing', defaultValue: 'Farmers Empowered' }), suffix: '+', icon: Sprout },
+    { value: industriesCount.value, label: t('impact.stats.2.label', { ns: 'landing', defaultValue: 'Industries Connected' }), suffix: '+', icon: Factory },
+    { value: biomassCount.value, label: t('impact.stats.3.label', { ns: 'landing', defaultValue: 'Tons Traded' }), suffix: '', icon: Recycle },
   ];
 
   const problemStats = [
-    { value: '120M', label: 'Tons of crop residue burned annually' },
-    { value: '1.2B', label: 'Tons of CO₂ emitted yearly' },
-    { value: '₹0', label: 'Income for farmers from waste' },
+    { value: '120M', label: t('problem.stats.0.label', { ns: 'landing', defaultValue: 'Tons of crop residue burned annually' }) },
+    { value: '1.2B', label: t('problem.stats.1.label', { ns: 'landing', defaultValue: 'Tons of CO2 emitted yearly' }) },
+    { value: '₹0', label: t('problem.stats.2.label', { ns: 'landing', defaultValue: 'Income for farmers from waste' }) },
   ];
 
   return (
@@ -334,17 +374,17 @@ const Landing = () => {
               <Leaf className="h-6 w-6 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              AgriConnect
+              {t('brand.name', { ns: 'common', defaultValue: 'AgriConnect' })}
             </span>
           </motion.div>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-12">
-            <a href="#hero" onClick={(e) => { e.preventDefault(); document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">Home</a>
-            <a href="#solution" onClick={(e) => { e.preventDefault(); document.getElementById('solution')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">Solution</a>
-            <a href="#features" onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">Features</a>
-            <a href="#how-it-works" onClick={(e) => { e.preventDefault(); document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">How it Works</a>
-            <a href="#impact" onClick={(e) => { e.preventDefault(); document.getElementById('impact')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">Impact</a>
+            <a href="#hero" onClick={(e) => { e.preventDefault(); document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">{t('navbar.home', { ns: 'landing', defaultValue: 'Home' })}</a>
+            <a href="#solution" onClick={(e) => { e.preventDefault(); document.getElementById('solution')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">{t('navbar.solution', { ns: 'landing', defaultValue: 'Solution' })}</a>
+            <a href="#features" onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">{t('navbar.features', { ns: 'landing', defaultValue: 'Features' })}</a>
+            <a href="#how-it-works" onClick={(e) => { e.preventDefault(); document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">{t('navbar.howItWorks', { ns: 'landing', defaultValue: 'How it Works' })}</a>
+            <a href="#impact" onClick={(e) => { e.preventDefault(); document.getElementById('impact')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer">{t('navbar.impact', { ns: 'landing', defaultValue: 'Impact' })}</a>
           </div>
 
           {/* Right Nav Items */}
@@ -360,7 +400,7 @@ const Landing = () => {
                 to="/login?mode=register"
                 className="px-6 py-2 text-sm font-semibold bg-gradient-to-r from-primary to-accent text-white rounded-lg hover:shadow-lg transition-all"
               >
-                Get Started
+                {t('navbar.getStarted', { ns: 'landing', defaultValue: 'Get Started' })}
               </Link>
             </motion.div>
             <button
@@ -381,12 +421,12 @@ const Landing = () => {
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden mt-4 space-y-4 pb-4 border-t border-border/20 pt-4"
             >
-              <a href="#hero" onClick={(e) => { e.preventDefault(); document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">Home</a>
-              <a href="#solution" onClick={(e) => { e.preventDefault(); document.getElementById('solution')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">Solution</a>
-              <a href="#features" onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">Features</a>
-              <a href="#how-it-works" onClick={(e) => { e.preventDefault(); document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">How it Works</a>
-              <a href="#impact" onClick={(e) => { e.preventDefault(); document.getElementById('impact')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">Impact</a>
-              <Link to="/login" className="block text-sm font-medium text-muted-foreground">Login</Link>
+              <a href="#hero" onClick={(e) => { e.preventDefault(); document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">{t('navbar.home', { ns: 'landing', defaultValue: 'Home' })}</a>
+              <a href="#solution" onClick={(e) => { e.preventDefault(); document.getElementById('solution')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">{t('navbar.solution', { ns: 'landing', defaultValue: 'Solution' })}</a>
+              <a href="#features" onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">{t('navbar.features', { ns: 'landing', defaultValue: 'Features' })}</a>
+              <a href="#how-it-works" onClick={(e) => { e.preventDefault(); document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">{t('navbar.howItWorks', { ns: 'landing', defaultValue: 'How it Works' })}</a>
+              <a href="#impact" onClick={(e) => { e.preventDefault(); document.getElementById('impact')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }} className="block text-sm font-medium text-muted-foreground cursor-pointer">{t('navbar.impact', { ns: 'landing', defaultValue: 'Impact' })}</a>
+              <Link to="/login" className="block text-sm font-medium text-muted-foreground">{t('navbar.login', { ns: 'landing', defaultValue: 'Login' })}</Link>
               <LanguageSwitcher />
             </motion.div>
           )}
@@ -423,20 +463,20 @@ const Landing = () => {
                 whileHover={{ scale: 1.05 }}
               >
                 <Sprout className="h-4 w-4 text-primary" />
-                <span className="text-xs font-semibold text-primary">Sustainable Agriculture & Waste Management</span>
+                <span className="text-xs font-semibold text-primary">{t('hero.badge', { ns: 'landing', defaultValue: 'Sustainable Agriculture & Waste Management' })}</span>
               </motion.div>
 
               <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  Turning Crop Waste
+                  {t('hero.titleLine1', { ns: 'landing', defaultValue: 'Turning Crop Waste' })}
                 </span>
                 <br />
-                <span className="text-foreground">into Green Wealth</span>
+                <span className="text-foreground">{t('hero.titleLine2', { ns: 'landing', defaultValue: 'into Green Wealth' })}</span>
                 <span className="text-4xl md:text-5xl"> 🌱</span>
               </h1>
 
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                AgriConnect empowers farmers to convert crop residue into income while reducing pollution and enabling sustainable industries.
+                {t('hero.description', { ns: 'landing', defaultValue: 'AgriConnect empowers farmers to convert crop residue into income while reducing pollution and enabling sustainable industries.' })}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -445,7 +485,7 @@ const Landing = () => {
                     to="/login?mode=register&role=farmer"
                     className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
                   >
-                    Start as Farmer <ArrowRight size={18} />
+                    {t('hero.startFarmer', { ns: 'landing', defaultValue: 'Start as Farmer' })} <ArrowRight size={18} />
                   </Link>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -453,7 +493,7 @@ const Landing = () => {
                     to="/login?mode=register&role=industry"
                     className="flex items-center justify-center gap-2 px-8 py-4 border-2 border-primary/30 text-foreground rounded-xl font-semibold hover:bg-primary/5 transition-all"
                   >
-                    Join as Industry <ArrowRight size={18} />
+                    {t('hero.joinIndustry', { ns: 'landing', defaultValue: 'Join as Industry' })} <ArrowRight size={18} />
                   </Link>
                 </motion.div>
               </div>
@@ -473,7 +513,7 @@ const Landing = () => {
                 transition={{ duration: 4, repeat: Infinity }}
               >
                 <Sprout className="h-8 w-8 text-accent mb-3" />
-                <p className="text-xs text-muted-foreground mb-2">Farmers Earning</p>
+                <p className="text-xs text-muted-foreground mb-2">{t('hero.floating.farmersEarning', { ns: 'landing', defaultValue: 'Farmers Earning' })}</p>
                 <p className="text-2xl font-bold text-foreground">₹48.5L+</p>
               </motion.div>
 
@@ -484,8 +524,10 @@ const Landing = () => {
                 transition={{ duration: 4, repeat: Infinity, delay: 1 }}
               >
                 <Globe className="h-8 w-8 text-green-500 mb-3" />
-                <p className="text-xs text-muted-foreground mb-2">CO₂ Saved</p>
-                <p className="text-2xl font-bold text-foreground">{co2Count.value}K+ Tons</p>
+                <p className="text-xs text-muted-foreground mb-2">{t('hero.floating.co2Saved', { ns: 'landing', defaultValue: 'CO₂ Saved' })}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {t('hero.floating.co2SavedValue', { ns: 'landing', defaultValue: '{{value}}K+ Tons', value: co2Count.value })}
+                </p>
               </motion.div>
 
               {/* Card 3 */}
@@ -495,7 +537,7 @@ const Landing = () => {
                 transition={{ duration: 4, repeat: Infinity, delay: 2 }}
               >
                 <Factory className="h-8 w-8 text-blue-500 mb-3" />
-                <p className="text-xs text-muted-foreground mb-2">Industries Matched</p>
+                <p className="text-xs text-muted-foreground mb-2">{t('hero.floating.industriesMatched', { ns: 'landing', defaultValue: 'Industries Matched' })}</p>
                 <p className="text-2xl font-bold text-foreground">{industriesCount.value}+</p>
               </motion.div>
             </motion.div>
@@ -515,11 +557,11 @@ const Landing = () => {
           >
             <div className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 mb-4">
               <AlertCircle className="h-4 w-4 text-red-500" />
-              <span className="text-xs font-semibold text-red-600">The Crisis</span>
+              <span className="text-xs font-semibold text-red-600">{t('problem.badge', { ns: 'landing', defaultValue: 'The Crisis' })}</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">The Problem We're Solving</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">{t('problem.title', { ns: 'landing', defaultValue: "The Problem We're Solving" })}</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Millions of tons of crop residue are burned every year, causing severe air pollution and wasting valuable resources that could benefit industries and farmers alike.
+              {t('problem.description', { ns: 'landing', defaultValue: 'Millions of tons of crop residue are burned every year, causing severe air pollution and wasting valuable resources that could benefit industries and farmers alike.' })}
             </p>
           </motion.div>
 
@@ -551,9 +593,9 @@ const Landing = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Our Solution</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">{t('solution.title', { ns: 'landing', defaultValue: 'Our Solution' })}</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              A smart platform connecting farmers with industries for sustainable waste transformation
+              {t('solution.description', { ns: 'landing', defaultValue: 'A smart platform connecting farmers with industries for sustainable waste transformation' })}
             </p>
           </motion.div>
 
@@ -593,9 +635,9 @@ const Landing = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Powerful Features</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">{t('features.title', { ns: 'landing', defaultValue: 'Powerful Features' })}</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Everything you need to succeed in the circular economy
+              {t('features.description', { ns: 'landing', defaultValue: 'Everything you need to succeed in the circular economy' })}
             </p>
           </motion.div>
 
@@ -617,7 +659,7 @@ const Landing = () => {
                   <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
                   <p className="text-muted-foreground">{feature.description}</p>
                   <div className="mt-6 flex items-center text-primary font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                    Learn more <ChevronRight size={18} className="ml-2" />
+                    {t('features.learnMore', { ns: 'landing', defaultValue: 'Learn more' })} <ChevronRight size={18} className="ml-2" />
                   </div>
                 </div>
               </motion.div>
@@ -636,9 +678,9 @@ const Landing = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Real Impact, Real Numbers</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">{t('impact.title', { ns: 'landing', defaultValue: 'Real Impact, Real Numbers' })}</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              See the difference AgriConnect is making in real-time
+              {t('impact.description', { ns: 'landing', defaultValue: 'See the difference AgriConnect is making in real-time' })}
             </p>
           </motion.div>
 
@@ -684,16 +726,23 @@ const Landing = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">How It Works</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">{t('howItWorks.title', { ns: 'landing', defaultValue: 'How It Works' })}</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              A seamless flow from crop residue to sustainable value creation
+              {t('howItWorks.description', { ns: 'landing', defaultValue: 'A seamless flow from crop residue to sustainable value creation' })}
             </p>
           </motion.div>
 
           <div className="relative">
             {/* Desktop Flow */}
             <div className="hidden md:flex items-center justify-between">
-              {['Farmer', 'Listing', 'Matching', 'Transport', 'Industry', 'Impact'].map((step, index) => (
+              {[
+                t('howItWorks.desktop.0', { ns: 'landing', defaultValue: 'Farmer' }),
+                t('howItWorks.desktop.1', { ns: 'landing', defaultValue: 'Listing' }),
+                t('howItWorks.desktop.2', { ns: 'landing', defaultValue: 'Matching' }),
+                t('howItWorks.desktop.3', { ns: 'landing', defaultValue: 'Transport' }),
+                t('howItWorks.desktop.4', { ns: 'landing', defaultValue: 'Industry' }),
+                t('howItWorks.desktop.5', { ns: 'landing', defaultValue: 'Impact' }),
+              ].map((step, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 20 }}
@@ -715,7 +764,14 @@ const Landing = () => {
 
             {/* Mobile Flow */}
             <div className="md:hidden space-y-4">
-              {['Farmer Lists Residue', 'AI System Searches', 'Finds Matching Industry', 'Arranges Transport', 'Secure Transaction', 'Carbon Impact Recorded'].map((step, index) => (
+              {[
+                t('howItWorks.mobile.0', { ns: 'landing', defaultValue: 'Farmer Lists Residue' }),
+                t('howItWorks.mobile.1', { ns: 'landing', defaultValue: 'AI System Searches' }),
+                t('howItWorks.mobile.2', { ns: 'landing', defaultValue: 'Finds Matching Industry' }),
+                t('howItWorks.mobile.3', { ns: 'landing', defaultValue: 'Arranges Transport' }),
+                t('howItWorks.mobile.4', { ns: 'landing', defaultValue: 'Secure Transaction' }),
+                t('howItWorks.mobile.5', { ns: 'landing', defaultValue: 'Carbon Impact Recorded' }),
+              ].map((step, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -30 }}
@@ -747,17 +803,32 @@ const Landing = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Gamified Sustainability</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">{t('gamification.title', { ns: 'landing', defaultValue: 'Gamified Sustainability' })}</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Earn rewards, build your reputation, and make a real environmental impact
+              {t('gamification.description', { ns: 'landing', defaultValue: 'Earn rewards, build your reputation, and make a real environmental impact' })}
             </p>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: Trophy, title: 'Green Streaks', description: 'Consistent trading earns you exclusive badges and rewards', color: 'from-green-500 to-emerald-500' },
-              { icon: Gauge, title: 'Trust Score', description: 'Build a verified profile that attracts premium buyers', color: 'from-blue-500 to-cyan-500' },
-              { icon: Globe, title: 'Carbon Points', description: 'Convert CO₂ savings into transferable carbon credits', color: 'from-purple-500 to-pink-500' },
+              {
+                icon: Trophy,
+                title: t('gamification.items.0.title', { ns: 'landing', defaultValue: 'Green Streaks' }),
+                description: t('gamification.items.0.description', { ns: 'landing', defaultValue: 'Consistent trading earns you exclusive badges and rewards' }),
+                color: 'from-green-500 to-emerald-500',
+              },
+              {
+                icon: Gauge,
+                title: t('gamification.items.1.title', { ns: 'landing', defaultValue: 'Trust Score' }),
+                description: t('gamification.items.1.description', { ns: 'landing', defaultValue: 'Build a verified profile that attracts premium buyers' }),
+                color: 'from-blue-500 to-cyan-500',
+              },
+              {
+                icon: Globe,
+                title: t('gamification.items.2.title', { ns: 'landing', defaultValue: 'Carbon Points' }),
+                description: t('gamification.items.2.description', { ns: 'landing', defaultValue: 'Convert CO2 savings into transferable carbon credits' }),
+                color: 'from-purple-500 to-pink-500',
+              },
             ].map((item, index) => (
               <motion.div
                 key={index}
@@ -790,9 +861,9 @@ const Landing = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Success Stories</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">{t('successStories.title', { ns: 'landing', defaultValue: 'Success Stories' })}</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Real farmers and industries transforming waste into wealth
+              {t('successStories.description', { ns: 'landing', defaultValue: 'Real farmers and industries transforming waste into wealth' })}
             </p>
           </motion.div>
 
@@ -814,10 +885,10 @@ const Landing = () => {
             viewport={{ once: true }}
           >
             <h2 className="text-4xl md:text-6xl font-bold mb-6">
-              Join the Green Revolution 🌍
+              {t('cta.title', { ns: 'landing', defaultValue: 'Join the Green Revolution 🌍' })}
             </h2>
             <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Be part of a movement that transforms agricultural waste into sustainable wealth while protecting our planet.
+              {t('cta.description', { ns: 'landing', defaultValue: 'Be part of a movement that transforms agricultural waste into sustainable wealth while protecting our planet.' })}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -826,7 +897,7 @@ const Landing = () => {
                   to="/login?mode=register&role=farmer"
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
                 >
-                  Start as Farmer <ArrowRight size={18} />
+                  {t('hero.startFarmer', { ns: 'landing', defaultValue: 'Start as Farmer' })} <ArrowRight size={18} />
                 </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -834,7 +905,7 @@ const Landing = () => {
                   to="/login?mode=register&role=industry"
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 border-primary/30 text-foreground rounded-xl font-semibold hover:bg-primary/5 transition-all"
                 >
-                  Join as Industry <ArrowRight size={18} />
+                  {t('hero.joinIndustry', { ns: 'landing', defaultValue: 'Join as Industry' })} <ArrowRight size={18} />
                 </Link>
               </motion.div>
             </div>
@@ -852,50 +923,50 @@ const Landing = () => {
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
                   <Leaf className="h-6 w-6 text-white" />
                 </div>
-                <span className="text-xl font-bold">AgriConnect</span>
+                <span className="text-xl font-bold">{t('brand.name', { ns: 'common', defaultValue: 'AgriConnect' })}</span>
               </div>
               <p className="text-muted-foreground max-w-sm">
-                Transforming agricultural waste into sustainable wealth while protecting our planet.
+                {t('footer.description', { ns: 'landing', defaultValue: 'Transforming agricultural waste into sustainable wealth while protecting our planet.' })}
               </p>
             </div>
 
             {/* Links */}
             <div>
-              <h4 className="font-semibold mb-4">Product</h4>
+              <h4 className="font-semibold mb-4">{t('footer.product', { ns: 'landing', defaultValue: 'Product' })}</h4>
               <ul className="space-y-2">
-                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Features</Link></li>
-                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Pricing</Link></li>
-                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Security</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">{t('footer.links.features', { ns: 'landing', defaultValue: 'Features' })}</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">{t('footer.links.pricing', { ns: 'landing', defaultValue: 'Pricing' })}</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">{t('footer.links.security', { ns: 'landing', defaultValue: 'Security' })}</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4">Company</h4>
+              <h4 className="font-semibold mb-4">{t('footer.company', { ns: 'landing', defaultValue: 'Company' })}</h4>
               <ul className="space-y-2">
-                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">About</Link></li>
-                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Blog</Link></li>
-                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Careers</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">{t('footer.links.about', { ns: 'landing', defaultValue: 'About' })}</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">{t('footer.links.blog', { ns: 'landing', defaultValue: 'Blog' })}</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">{t('footer.links.careers', { ns: 'landing', defaultValue: 'Careers' })}</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
+              <h4 className="font-semibold mb-4">{t('footer.legal', { ns: 'landing', defaultValue: 'Legal' })}</h4>
               <ul className="space-y-2">
-                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Privacy</Link></li>
-                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Terms</Link></li>
-                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">Contact</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">{t('footer.links.privacy', { ns: 'landing', defaultValue: 'Privacy' })}</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">{t('footer.links.terms', { ns: 'landing', defaultValue: 'Terms' })}</Link></li>
+                <li><Link to="#" className="text-muted-foreground hover:text-foreground transition">{t('footer.links.contact', { ns: 'landing', defaultValue: 'Contact' })}</Link></li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-border/20 pt-8 flex flex-col sm:flex-row items-center justify-between">
             <p className="text-muted-foreground text-sm">
-              &copy; {new Date().getFullYear()} AgriConnect. All rights reserved.
+              &copy; {new Date().getFullYear()} {t('brand.name', { ns: 'common', defaultValue: 'AgriConnect' })}. {t('footer.rights', { ns: 'landing', defaultValue: 'All rights reserved.' })}
             </p>
             <div className="flex gap-4 mt-4 sm:mt-0">
-              <a href="#" className="text-muted-foreground hover:text-foreground transition">Twitter</a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition">LinkedIn</a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition">Instagram</a>
+              <a href="#" className="text-muted-foreground hover:text-foreground transition">{t('footer.social.twitter', { ns: 'landing', defaultValue: 'Twitter' })}</a>
+              <a href="#" className="text-muted-foreground hover:text-foreground transition">{t('footer.social.linkedin', { ns: 'landing', defaultValue: 'LinkedIn' })}</a>
+              <a href="#" className="text-muted-foreground hover:text-foreground transition">{t('footer.social.instagram', { ns: 'landing', defaultValue: 'Instagram' })}</a>
             </div>
           </div>
         </div>
