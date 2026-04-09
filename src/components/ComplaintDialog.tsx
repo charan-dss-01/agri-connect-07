@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -79,7 +79,13 @@ export default function ComplaintDialog() {
     });
 
     if (error) {
-      if (error.code === '23505') {
+      if (error.code === 'PGRST205') {
+        toast({
+          title: 'Complaints Unavailable',
+          description: 'The complaints feature is not set up in this Supabase project yet. Run the latest migrations.',
+          variant: 'destructive',
+        });
+      } else if (error.code === '23505') {
         toast({ title: 'Duplicate Complaint', description: 'You already filed a complaint for this transaction.', variant: 'destructive' });
       } else {
         toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -111,6 +117,9 @@ export default function ComplaintDialog() {
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-destructive" /> Raise Complaint
           </DialogTitle>
+          <DialogDescription>
+            Select a related transaction and explain the issue for admin review.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>

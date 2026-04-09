@@ -11,6 +11,7 @@ interface AIAnalysisResult {
   adjustedPrice: number;
   detectedCropType?: string;
   analysis?: string;
+  isFallback?: boolean;
 }
 
 interface AIAnalysisPanelProps {
@@ -70,12 +71,32 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
         if (error) throw error;
 
         const aiResult = data as {
+          debugCase?: string;
+          debugStatus?: number;
+          debugReason?: string;
           cropType: string;
           moisture: number;
           qualityGrade: 'A' | 'B' | 'C';
           confidence: number;
           analysis: string;
         };
+
+        const isFallback = Boolean(aiResult.debugCase && aiResult.debugCase !== 'success');
+
+        if (isFallback) {
+          const logDetails = {
+            status: aiResult.debugStatus,
+            reason: aiResult.debugReason,
+          };
+
+          if (aiResult.debugCase === 'fallback:quota-exceeded' || aiResult.debugCase === 'fallback:rate-limited') {
+            console.info('[AIAnalysisPanel] analyze-crop fallback:', aiResult.debugCase, logDetails);
+          } else {
+            console.warn('[AIAnalysisPanel] analyze-crop fallback:', aiResult.debugCase, logDetails);
+          }
+        } else {
+          console.info('[AIAnalysisPanel] analyze-crop case:', aiResult.debugCase || 'success');
+        }
 
         return {
           moisture: aiResult.moisture,
@@ -89,6 +110,7 @@ export default function AIAnalysisPanel({ cropType, onAnalysisComplete, trigger,
           ),
           detectedCropType: aiResult.cropType,
           analysis: aiResult.analysis,
+          isFallback,
         };
       } catch (err) {
         console.error('AI analysis error:', err);

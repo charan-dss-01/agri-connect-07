@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { Session, User as SupaUser } from '@supabase/supabase-js';
+import type { AuthError, Session, User as SupaUser } from '@supabase/supabase-js';
 
 export type UserRole = 'farmer' | 'industry' | 'admin';
 
@@ -48,6 +48,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const getReadableAuthError = (error: AuthError): string => {
+    if (error.status === 400) {
+      const normalized = error.message.toLowerCase();
+
+      if (normalized.includes('invalid login credentials')) {
+        return 'Invalid email or password.';
+      }
+
+      if (normalized.includes('email not confirmed')) {
+        return 'Please confirm your email before signing in.';
+      }
+
+      if (normalized.includes('anonymous sign-ins are disabled')) {
+        return 'This sign-in method is disabled for this project.';
+      }
+    }
+
+    return error.message;
+  };
 
   const fetchUserProfile = async (supaUser: SupaUser): Promise<User | null> => {
     const { data: profile } = await supabase
@@ -133,8 +153,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string): Promise<{ error?: string }> => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPassword = password.trim();
+
+    if (!normalizedEmail || !normalizedPassword) {
+      return { error: 'Email and password are required.' };
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password: normalizedPassword,
+    });
+
+    if (error) return { error: getReadableAuthError(error) };
 
     if (data.user) {
       const { data: profile } = await supabase

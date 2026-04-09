@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,7 +15,8 @@ import { useTranslation } from 'react-i18next';
 
 const FarmerListResidue = () => {
   const { user } = useAuth();
-  const { t } = useTranslation(['common', 'farmer']);
+  const { t: rawT } = useTranslation(['common', 'farmer']);
+  const t = rawT as unknown as (key: string, options?: Record<string, unknown>) => string;
   const [cropType, setCropType] = useState('Paddy');
   const [quantity, setQuantity] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -50,16 +51,32 @@ const FarmerListResidue = () => {
   const qty = parseFloat(quantity) || 0;
   const totalValue = qty * pricePerTon;
 
-  const nearbyIndustries = industries.map(ind => {
-    const dist = (locationLat || user?.location?.lat) && (locationLng || user?.location?.lng) && ind.lat && ind.lng
-      ? calculateDistance(locationLat || user!.location!.lat, locationLng || user!.location!.lng, Number(ind.lat), Number(ind.lng))
-      : 0;
-    const baseCost = dist * TRANSPORT_RATE * qty;
-    const isCluster = dist <= CLUSTER_RADIUS_KM;
-    const transportCost = isCluster ? baseCost * (1 - CLUSTER_DISCOUNT) : baseCost;
-    const netProfit = (Number(ind.price_offered_per_ton) * qty) - transportCost;
-    return { ...ind, distance: dist, transportCost, netProfit, isCluster, originalCost: baseCost, savings: isCluster ? baseCost * CLUSTER_DISCOUNT : 0 };
-  }).sort((a, b) => a.distance - b.distance);
+  const nearbyIndustries = useMemo(() => {
+    const sourceLat = locationLat ?? user?.location?.lat;
+    const sourceLng = locationLng ?? user?.location?.lng;
+
+    return industries
+      .map(ind => {
+        const dist = sourceLat && sourceLng && ind.lat && ind.lng
+          ? calculateDistance(sourceLat, sourceLng, Number(ind.lat), Number(ind.lng))
+          : 0;
+        const baseCost = dist * TRANSPORT_RATE * qty;
+        const isCluster = dist <= CLUSTER_RADIUS_KM;
+        const transportCost = isCluster ? baseCost * (1 - CLUSTER_DISCOUNT) : baseCost;
+        const netProfit = (Number(ind.price_offered_per_ton) * qty) - transportCost;
+
+        return {
+          ...ind,
+          distance: dist,
+          transportCost,
+          netProfit,
+          isCluster,
+          originalCost: baseCost,
+          savings: isCluster ? baseCost * CLUSTER_DISCOUNT : 0,
+        };
+      })
+      .sort((a, b) => a.distance - b.distance);
+  }, [industries, locationLat, locationLng, user?.location?.lat, user?.location?.lng, qty]);
 
   const handleSubmitListing = async () => {
     if (!user?.id || qty <= 0) return;
@@ -95,11 +112,10 @@ const FarmerListResidue = () => {
     }).select().single();
 
     if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
       toast({ title: t('listing.errorTitle', { ns: 'farmer' }), description: error.message, variant: 'destructive' });
+    } else {
       setCurrentListingId(data.id);
       setSubmitted(true);
-      toast({ title: 'Listing Submitted!', description: `${qty} tons of ${cropType} listed successfully.` });
       toast({ title: t('listing.submittedToastTitle', { ns: 'farmer' }), description: t('listing.submittedToastDescription', { ns: 'farmer', quantity: qty, cropType }) });
     }
     setSubmittingListing(false);
@@ -172,6 +188,21 @@ const FarmerListResidue = () => {
     setSentRequests([]);
   };
 
+  const handleAnalysisComplete = useCallback((res: { moisture: number; grade: 'A' | 'B' | 'C'; confidence: number; adjustedPrice: number; detectedCropType?: string }) => {
+    setAdjustedPrice(res.adjustedPrice);
+    setAiResult(res);
+
+    if (res.detectedCropType && res.detectedCropType !== cropType) {
+      setCropType(res.detectedCropType);
+    }
+  }, [cropType]);
+
+  const handleLocationChange = useCallback((newLat: number, newLng: number, newAddr: string) => {
+    setLocationLat(newLat);
+    setLocationLng(newLng);
+    setLocationAddress(newAddr);
+  }, []);
+
   if (loadingData) {
     return (
       <DashboardLayout>
@@ -215,13 +246,7 @@ const FarmerListResidue = () => {
                 cropType={cropType}
                 trigger={aiTrigger}
                 imageFile={imageFile}
-                onAnalysisComplete={(res) => {
-                  setAdjustedPrice(res.adjustedPrice);
-                  setAiResult(res);
-                  if (res.detectedCropType && res.detectedCropType !== cropType) {
-                    setCropType(res.detectedCropType);
-                  }
-                }}
+                onAnalysisComplete={handleAnalysisComplete}
               />
 
               <div className="grid grid-cols-2 gap-4">
@@ -242,11 +267,7 @@ const FarmerListResidue = () => {
                 lat={locationLat}
                 lng={locationLng}
                 address={locationAddress}
-                onLocationChange={(newLat, newLng, newAddr) => {
-                  setLocationLat(newLat);
-                  setLocationLng(newLng);
-                  setLocationAddress(newAddr);
-                }}
+                onLocationChange={handleLocationChange}
                 compact
               />
 
