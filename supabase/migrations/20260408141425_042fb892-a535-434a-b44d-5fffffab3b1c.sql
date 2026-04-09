@@ -1,6 +1,6 @@
 
 -- Create user_stats table for gamification
-CREATE TABLE public.user_stats (
+CREATE TABLE IF NOT EXISTS public.user_stats (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL UNIQUE,
   total_points numeric NOT NULL DEFAULT 0,
@@ -17,11 +17,17 @@ CREATE TABLE public.user_stats (
 ALTER TABLE public.user_stats DISABLE ROW LEVEL SECURITY;
 
 -- Add resolution columns to complaints
-ALTER TABLE public.complaints ADD COLUMN IF NOT EXISTS resolution text;
-ALTER TABLE public.complaints ADD COLUMN IF NOT EXISTS points_deducted numeric DEFAULT 0;
-
--- Unique constraint: one complaint per transaction per complainant
-ALTER TABLE public.complaints ADD CONSTRAINT complaints_unique_per_tx UNIQUE (complainant_id, transaction_id);
+DO $$
+BEGIN
+  IF to_regclass('public.complaints') IS NOT NULL THEN
+    ALTER TABLE public.complaints ADD COLUMN IF NOT EXISTS resolution text;
+    ALTER TABLE public.complaints ADD COLUMN IF NOT EXISTS points_deducted numeric DEFAULT 0;
+    CREATE UNIQUE INDEX IF NOT EXISTS complaints_unique_per_tx
+    ON public.complaints (complainant_id, transaction_id)
+    WHERE transaction_id IS NOT NULL;
+  END IF;
+END
+$$;
 
 -- Function to update user stats when transaction completes
 CREATE OR REPLACE FUNCTION public.update_user_stats_on_complete()

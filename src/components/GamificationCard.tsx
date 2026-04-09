@@ -34,15 +34,28 @@ export default function GamificationCard() {
 
   useEffect(() => {
     if (!user?.id) return;
-    supabase
-      .from('user_stats')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setStats(data as unknown as UserStats);
-        else setStats({ total_points: 0, total_co2_saved: 0, total_transactions: 0, current_streak: 0, longest_streak: 0 });
-      });
+
+    const loadStats = async () => {
+      const { data, error } = await supabase
+        .from('user_stats')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error?.code === 'PGRST205') {
+        setStats({ total_points: 0, total_co2_saved: 0, total_transactions: 0, current_streak: 0, longest_streak: 0 });
+        return;
+      }
+
+      if (data) {
+        setStats(data as unknown as UserStats);
+        return;
+      }
+
+      setStats({ total_points: 0, total_co2_saved: 0, total_transactions: 0, current_streak: 0, longest_streak: 0 });
+    };
+
+    void loadStats();
   }, [user?.id]);
 
   if (!stats) return null;
@@ -66,7 +79,7 @@ export default function GamificationCard() {
         </div>
         <div className="flex items-center gap-3 mb-3">
           <span className={`text-lg font-bold ${level.color}`}>{level.label}</span>
-          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+          <span className="text-xs bg-primary/10 text-color- text-primary px-2 py-0.5 rounded-full font-medium">
             <Star className="w-3 h-3 inline mr-1" />{stats.total_points.toLocaleString()} pts
           </span>
         </div>

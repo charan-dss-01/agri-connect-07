@@ -5,7 +5,7 @@ import { AlertTriangle, ShieldAlert, Loader2, MinusCircle, Ban, AlertCircle } fr
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Complaint {
   id: string;
@@ -37,10 +37,21 @@ export default function AdminComplaints() {
   const [processing, setProcessing] = useState(false);
 
   const fetchComplaints = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('complaints')
       .select('*')
       .order('created_at', { ascending: false });
+
+    if (error?.code === 'PGRST205') {
+      toast({
+        title: 'Complaints Unavailable',
+        description: 'Run the latest Supabase migrations to create the complaints table.',
+        variant: 'destructive',
+      });
+      setComplaints([]);
+      setLoading(false);
+      return;
+    }
 
     if (!data) { setLoading(false); return; }
 
@@ -85,7 +96,7 @@ export default function AdminComplaints() {
     }).eq('id', complaint.id);
 
     // Deduct points if applicable
-    if (option.points > 0) {
+    //if (option.points  0) {
       const { data: stats } = await supabase
         .from('user_stats')
         .select('total_points')
@@ -99,7 +110,7 @@ export default function AdminComplaints() {
         user_id: complaint.accused_id,
         total_points: newPoints,
       }, { onConflict: 'user_id' });
-    }
+    //}
 
     // Send notification to accused
     await supabase.from('notifications').insert({
@@ -251,6 +262,9 @@ export default function AdminComplaints() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Take Action on Complaint</DialogTitle>
+              <DialogDescription>
+                Resolve, reject, or penalize a complaint after reviewing the report details.
+              </DialogDescription>
             </DialogHeader>
             {actionDialog && (
               <div className="space-y-4">
