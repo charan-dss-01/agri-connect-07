@@ -28,6 +28,10 @@ const IndustryRequests = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [pickupDates, setPickupDates] = useState<Record<string, string>>({});
   const [expandedTx, setExpandedTx] = useState<string | null>(null);
+  const [reportingTxId, setReportingTxId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [reporting, setReporting] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ id: string; type: 'accept' | 'reject' | 'complete' } | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
@@ -41,6 +45,55 @@ const IndustryRequests = () => {
   }, [user?.id]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const startReport = (txId: string) => {
+    if (reportingTxId === txId) {
+      setReportingTxId(null);
+      setReportReason('');
+      setReportDetails('');
+      return;
+    }
+
+    setReportingTxId(txId);
+    setReportReason('');
+    setReportDetails('');
+  };
+
+  const submitReport = async (transaction: any) => {
+    if (!user?.id) return;
+
+    const reason = reportReason.trim();
+    if (!reason) {
+      toast({ title: translate('requests.report.requiredReason', { ns: 'industry' }), variant: 'destructive' });
+      return;
+    }
+
+    setReporting(true);
+
+    const details = reportDetails.trim();
+    const { error } = await supabase.from('fraud_reports').insert({
+      reporter_user_id: user.id,
+      reported_user_id: transaction.farmer_id,
+      reason,
+      details: details || `Transaction: ${transaction.id}`,
+    });
+
+    setReporting(false);
+
+    if (error) {
+      toast({ title: translate('requests.report.failedTitle', { ns: 'industry' }), description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    toast({
+      title: translate('requests.report.successTitle', { ns: 'industry' }),
+      description: translate('requests.report.successDescription', { ns: 'industry' }),
+    });
+
+    setReportingTxId(null);
+    setReportReason('');
+    setReportDetails('');
+  };
 
   const filtered = filter === 'all' ? transactions : transactions.filter(t => t.status === filter);
 
@@ -162,8 +215,54 @@ const IndustryRequests = () => {
                           {translate('requests.markCompleted', { ns: 'industry' })}
                         </button>
                       )}
+                      <button
+                        onClick={() => startReport(t.id)}
+                        className="px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-colors"
+                      >
+                        {translate('requests.report.button', { ns: 'industry' })}
+                      </button>
                     </div>
                   </div>
+
+                  {reportingTxId === t.id && (
+                    <div className="mt-3 p-3 rounded-lg border border-border bg-muted/30 space-y-2">
+                      <p className="text-xs font-semibold">{translate('requests.report.title', { ns: 'industry' })}</p>
+                      <div>
+                        <label className="text-xs text-muted-foreground">{translate('requests.report.reasonLabel', { ns: 'industry' })}</label>
+                        <input
+                          type="text"
+                          value={reportReason}
+                          onChange={(e) => setReportReason(e.target.value)}
+                          placeholder={translate('requests.report.reasonPlaceholder', { ns: 'industry' })}
+                          className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">{translate('requests.report.detailsLabel', { ns: 'industry' })}</label>
+                        <textarea
+                          value={reportDetails}
+                          onChange={(e) => setReportDetails(e.target.value)}
+                          placeholder={translate('requests.report.detailsPlaceholder', { ns: 'industry' })}
+                          className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-xs min-h-20 focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => startReport(t.id)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted text-muted-foreground hover:bg-secondary transition-colors"
+                        >
+                          {translate('requests.report.cancel', { ns: 'industry' })}
+                        </button>
+                        <button
+                          disabled={reporting}
+                          onClick={() => submitReport(t)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60 transition-colors"
+                        >
+                          {reporting ? translate('requests.report.submitting', { ns: 'industry' }) : translate('requests.report.submit', { ns: 'industry' })}
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   <button onClick={() => setExpandedTx(expandedTx === t.id ? null : t.id)} className="text-[10px] text-primary mt-2 hover:underline">
                     {expandedTx === t.id ? translate('requests.hideTimeline', { ns: 'industry' }) : translate('requests.showTimeline', { ns: 'industry' })}

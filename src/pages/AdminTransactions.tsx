@@ -25,7 +25,7 @@ interface ProfileMap {
 }
 
 const AdminTransactions = () => {
-  const { t } = useTranslation(['common', 'admin']);
+  const { t: translate } = useTranslation(['common', 'admin']);
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<ProfileMap>({});
@@ -94,20 +94,20 @@ const AdminTransactions = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">{t('transactions.title', { ns: 'admin' })}</h2>
+          <h2 className="text-2xl font-bold">{translate('transactions.title', { ns: 'admin' })}</h2>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <BarChart3 className="w-4 h-4" />
-            <span>{t('transactions.totalCount', { ns: 'admin', count: transactions.length })}</span>
+            <span>{translate('transactions.totalCount', { ns: 'admin', count: transactions.length })}</span>
           </div>
         </div>
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { icon: BarChart3, label: t('transactions.summary.totalTransactions', { ns: 'admin' }), value: transactions.length.toString(), color: 'text-primary' },
-            { icon: IndianRupee, label: t('transactions.summary.totalValue', { ns: 'admin' }), value: `₹${totalValue.toLocaleString()}`, color: 'text-success' },
-            { icon: Truck, label: t('transactions.summary.biomassTraded', { ns: 'admin' }), value: `${totalBiomass}t`, color: 'text-info' },
-            { icon: Leaf, label: t('transactions.summary.co2Saved', { ns: 'admin' }), value: `${(totalCarbon / 1000).toFixed(1)}t`, color: 'text-primary' },
+            { icon: BarChart3, label: translate('transactions.summary.totalTransactions', { ns: 'admin' }), value: transactions.length.toString(), color: 'text-primary' },
+            { icon: IndianRupee, label: translate('transactions.summary.totalValue', { ns: 'admin' }), value: `₹${totalValue.toLocaleString()}`, color: 'text-success' },
+            { icon: Truck, label: translate('transactions.summary.biomassTraded', { ns: 'admin' }), value: `${totalBiomass}t`, color: 'text-info' },
+            { icon: Leaf, label: translate('transactions.summary.co2Saved', { ns: 'admin' }), value: `${(totalCarbon / 1000).toFixed(1)}t`, color: 'text-primary' },
           ].map((s, i) => (
             <div key={i} className="bg-card rounded-xl p-4 shadow-card">
               <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
@@ -125,7 +125,7 @@ const AdminTransactions = () => {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder={t('transactions.searchPlaceholder', { ns: 'admin' })}
+              placeholder={translate('transactions.searchPlaceholder', { ns: 'admin' })}
               className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -138,7 +138,7 @@ const AdminTransactions = () => {
                   statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'
                 }`}
               >
-                {t(`transactions.filters.${s}`, { ns: 'admin' })} ({statusCounts[s]})
+                {translate(`transactions.filters.${s}`, { ns: 'admin' })} ({statusCounts[s]})
               </button>
             ))}
           </div>
@@ -149,24 +149,24 @@ const AdminTransactions = () => {
           {filtered.length === 0 ? (
             <div className="text-center py-12">
               <BarChart3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">{t('transactions.noMatch', { ns: 'admin' })}</p>
+              <p className="text-sm text-muted-foreground">{translate('transactions.noMatch', { ns: 'admin' })}</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {filtered.map(t => {
-                const farmerName = profiles[t.farmer_id]?.name || t('transactions.unknownFarmer', { ns: 'admin' });
-                const industryName = profiles[t.industry_id]?.companyName || profiles[t.industry_id]?.name || t('transactions.unknownIndustry', { ns: 'admin' });
+              {filtered.map(tx => {
+                const farmerName = profiles[tx.farmer_id]?.name || translate('transactions.unknownFarmer', { ns: 'admin' });
+                const industryName = profiles[tx.industry_id]?.companyName || profiles[tx.industry_id]?.name || translate('transactions.unknownIndustry', { ns: 'admin' });
 
                 return (
-                  <div key={t.id} className="p-4 hover:bg-muted/30 transition-colors">
+                  <div key={tx.id} className="p-4 hover:bg-muted/30 transition-colors">
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-sm">{t.crop_type} — {Number(t.quantity)} tons</p>
-                          <StatusBadge status={t.status} />
-                          {t.cluster_eligible && (
+                          <p className="font-medium text-sm">{tx.crop_type} — {Number(tx.quantity)} tons</p>
+                          <StatusBadge status={tx.status} />
+                          {tx.cluster_eligible && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success font-medium">
-                              <Users className="w-2.5 h-2.5 inline mr-0.5" />{t('transactions.cluster', { ns: 'admin' })}
+                              <Users className="w-2.5 h-2.5 inline mr-0.5" />{translate('transactions.cluster', { ns: 'admin' })}
                             </span>
                           )}
                         </div>
@@ -175,49 +175,49 @@ const AdminTransactions = () => {
                           <span>🏭 {industryName}</span>
                         </div>
                         <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                          <span>₹{Number(t.price_per_ton)}/ton</span>
-                          <span>{t('transactions.total', { ns: 'admin', value: `₹${Number(t.total_value).toLocaleString()}` })}</span>
-                          <span>🚚 {Number(t.transport_distance || 0)} km</span>
-                          <span>{t('transactions.transport', { ns: 'admin', value: `₹${Number(t.transport_cost || 0).toLocaleString()}` })}</span>
-                          {Number(t.transport_savings) > 0 && (
-                            <span className="text-success">{t('transactions.saved', { ns: 'admin', value: `₹${Number(t.transport_savings).toLocaleString()}` })}</span>
+                          <span>₹{Number(tx.price_per_ton)}/ton</span>
+                          <span>{translate('transactions.totalValueLabel', { ns: 'admin', value: `₹${Number(tx.total_value).toLocaleString()}` })}</span>
+                          <span>🚚 {Number(tx.transport_distance || 0)} km</span>
+                          <span>{translate('transactions.transport', { ns: 'admin', value: `₹${Number(tx.transport_cost || 0).toLocaleString()}` })}</span>
+                          {Number(tx.transport_savings) > 0 && (
+                            <span className="text-success">{translate('transactions.saved', { ns: 'admin', value: `₹${Number(tx.transport_savings).toLocaleString()}` })}</span>
                           )}
                         </div>
-                        {t.status === 'completed' && (
+                        {tx.status === 'completed' && (
                           <div className="flex items-center gap-4 text-xs mt-1">
                             <span className="text-primary flex items-center gap-1">
-                              <Leaf className="w-3 h-3" /> {Number(t.carbon_saved || 0).toLocaleString()} kg CO₂
+                              <Leaf className="w-3 h-3" /> {Number(tx.carbon_saved || 0).toLocaleString()} kg CO₂
                             </span>
-                            <span className="text-success">{t('dashboard.credits', { ns: 'admin', count: Number(t.credit_points || 0) })}</span>
+                            <span className="text-success">{translate('dashboard.credits', { ns: 'admin', count: Number(tx.credit_points || 0) })}</span>
                           </div>
                         )}
-                        {t.pickup_date && (
+                        {tx.pickup_date && (
                           <p className="text-xs text-info mt-1 flex items-center gap-1">
-                            <Calendar className="w-3 h-3" /> {t('dashboard.pickup', { ns: 'admin', date: t.pickup_date })}
+                            <Calendar className="w-3 h-3" /> {translate('dashboard.pickup', { ns: 'admin', date: tx.pickup_date })}
                           </p>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground text-right shrink-0">
-                        <p>{new Date(t.created_at).toLocaleDateString()}</p>
-                        <p>{new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p>{new Date(tx.created_at).toLocaleDateString()}</p>
+                        <p>{new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </div>
 
                     <button
-                      onClick={() => setExpandedTx(expandedTx === t.id ? null : t.id)}
+                      onClick={() => setExpandedTx(expandedTx === tx.id ? null : tx.id)}
                       className="text-[10px] text-primary mt-2 hover:underline"
                     >
-                      {expandedTx === t.id ? t('dashboard.hideTimeline', { ns: 'admin' }) : t('dashboard.showTimeline', { ns: 'admin' })}
+                      {expandedTx === tx.id ? translate('dashboard.hideTimeline', { ns: 'admin' }) : translate('dashboard.showTimeline', { ns: 'admin' })}
                     </button>
-                    {expandedTx === t.id && (
+                    {expandedTx === tx.id && (
                       <div className="mt-2 pt-2 border-t border-border">
                         <TransactionTimeline transaction={{
-                          id: t.id, farmerId: t.farmer_id, farmerName, industryId: t.industry_id, industryName,
-                          cropType: t.crop_type, quantity: Number(t.quantity), pricePerTon: Number(t.price_per_ton),
-                          totalValue: Number(t.total_value), transportCost: Number(t.transport_cost || 0),
-                          netProfit: Number(t.net_profit || 0), distance: Number(t.transport_distance || 0),
-                          status: t.status, createdAt: t.created_at, pickupDate: t.pickup_date,
-                          clusterEligible: t.cluster_eligible, transportSavings: Number(t.transport_savings || 0),
+                          id: tx.id, farmerId: tx.farmer_id, farmerName, industryId: tx.industry_id, industryName,
+                          cropType: tx.crop_type, quantity: Number(tx.quantity), pricePerTon: Number(tx.price_per_ton),
+                          totalValue: Number(tx.total_value), transportCost: Number(tx.transport_cost || 0),
+                          netProfit: Number(tx.net_profit || 0), distance: Number(tx.transport_distance || 0),
+                          status: tx.status, createdAt: tx.created_at, pickupDate: tx.pickup_date,
+                          clusterEligible: tx.cluster_eligible, transportSavings: Number(tx.transport_savings || 0),
                         }} />
                       </div>
                     )}

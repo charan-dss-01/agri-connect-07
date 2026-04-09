@@ -17,6 +17,7 @@ const common = {
     browseListings: "लिस्टिंग देखें",
     users: "उपयोगकर्ता",
     transactions: "लेनदेन",
+    fraudReports: "धोखाधड़ी रिपोर्ट",
     logout: "लॉग आउट",
   },
   header: {

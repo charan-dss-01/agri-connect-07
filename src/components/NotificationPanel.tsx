@@ -13,6 +13,87 @@ interface NotificationItem {
   created_at: string;
 }
 
+const NOTIFICATION_LIMIT = 20;
+const CHANNEL_CLEANUP_DELAY_MS = 1500;
+
+let sharedNotificationsChannel: ReturnType<typeof supabase.channel> | null = null;
+let sharedNotificationsUserId: string | null = null;
+let sharedNotificationsSubscribers = 0;
+let sharedNotificationsCleanupTimer: ReturnType<typeof setTimeout> | null = null;
+const sharedNotificationListeners = new Set<(notification: NotificationItem) => void>();
+
+const clearSharedNotificationsCleanup = () => {
+  if (sharedNotificationsCleanupTimer !== null) {
+    clearTimeout(sharedNotificationsCleanupTimer);
+    sharedNotificationsCleanupTimer = null;
+  }
+};
+
+const scheduleChannelRemoval = (channel: ReturnType<typeof supabase.channel>) => {
+  window.setTimeout(() => {
+    void supabase.removeChannel(channel);
+  }, CHANNEL_CLEANUP_DELAY_MS);
+};
+
+const ensureNotificationsChannel = (userId: string) => {
+  clearSharedNotificationsCleanup();
+
+  if (sharedNotificationsChannel && sharedNotificationsUserId === userId) {
+    return sharedNotificationsChannel;
+  }
+
+  if (sharedNotificationsChannel) {
+    const staleChannel = sharedNotificationsChannel;
+    sharedNotificationsChannel = null;
+    sharedNotificationsUserId = null;
+    scheduleChannelRemoval(staleChannel);
+  }
+
+  sharedNotificationsUserId = userId;
+  sharedNotificationsChannel = supabase
+    .channel(`notifications:${userId}`)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'notifications',
+      filter: `user_id=eq.${userId}`,
+    }, (payload) => {
+      const notification = payload.new as NotificationItem;
+      sharedNotificationListeners.forEach((listener) => listener(notification));
+    })
+    .subscribe();
+
+  return sharedNotificationsChannel;
+};
+
+const subscribeToNotifications = (userId: string, listener: (notification: NotificationItem) => void) => {
+  ensureNotificationsChannel(userId);
+  sharedNotificationsSubscribers += 1;
+  sharedNotificationListeners.add(listener);
+
+  return () => {
+    sharedNotificationListeners.delete(listener);
+    sharedNotificationsSubscribers = Math.max(0, sharedNotificationsSubscribers - 1);
+
+    if (sharedNotificationsSubscribers > 0 || !sharedNotificationsChannel) {
+      return;
+    }
+
+    clearSharedNotificationsCleanup();
+    sharedNotificationsCleanupTimer = window.setTimeout(() => {
+      if (sharedNotificationsSubscribers > 0 || !sharedNotificationsChannel) {
+        return;
+      }
+
+      const channelToRemove = sharedNotificationsChannel;
+      sharedNotificationsChannel = null;
+      sharedNotificationsUserId = null;
+      sharedNotificationsCleanupTimer = null;
+      void supabase.removeChannel(channelToRemove);
+    }, CHANNEL_CLEANUP_DELAY_MS);
+  };
+};
+
 export default function NotificationPanel() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -20,7 +101,12 @@ export default function NotificationPanel() {
   const { t, i18n } = useTranslation('common');
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setNotifications([]);
+      return;
+    }
+
+    let active = true;
 
     const fetchNotifications = async () => {
       const { data } = await supabase
@@ -28,26 +114,32 @@ export default function NotificationPanel() {
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(20);
-      setNotifications(data || []);
+        .limit(NOTIFICATION_LIMIT);
+
+      if (!active) {
+        return;
+      }
+
+      setNotifications((data || []) as NotificationItem[]);
     };
 
-    fetchNotifications();
+    const unsubscribe = subscribeToNotifications(user.id, (notification) => {
+      if (!active) {
+        return;
+      }
 
-    // Subscribe to realtime notifications
-    const channel = supabase
-      .channel('notifications')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`,
-      }, (payload) => {
-        setNotifications(prev => [payload.new as NotificationItem, ...prev].slice(0, 20));
-      })
-      .subscribe();
+      setNotifications((prev) => [
+        notification,
+        ...prev.filter((item) => item.id !== notification.id),
+      ].slice(0, NOTIFICATION_LIMIT));
+    });
 
-    return () => { supabase.removeChannel(channel); };
+    void fetchNotifications();
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [user?.id]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
