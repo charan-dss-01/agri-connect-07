@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
   CROP_PRICES, TRANSPORT_RATE, calculateDistance,
+  calculateTransportCost, calculateNetProfit,
   CLUSTER_RADIUS_KM, CLUSTER_DISCOUNT
 } from '@/data/mockData';
 import { Wheat, Send, CheckCircle, Upload, Users, Loader2 } from 'lucide-react';
@@ -57,13 +58,13 @@ const FarmerListResidue = () => {
 
     return industries
       .map(ind => {
-        const dist = sourceLat && sourceLng && ind.lat && ind.lng
+        const dist = sourceLat != null && sourceLng != null && ind.lat != null && ind.lng != null
           ? calculateDistance(sourceLat, sourceLng, Number(ind.lat), Number(ind.lng))
-          : 0;
-        const baseCost = dist * TRANSPORT_RATE * qty;
-        const isCluster = dist <= CLUSTER_RADIUS_KM;
+          : null;
+        const baseCost = calculateTransportCost(dist, qty, TRANSPORT_RATE);
+        const isCluster = dist !== null && dist <= CLUSTER_RADIUS_KM;
         const transportCost = isCluster ? baseCost * (1 - CLUSTER_DISCOUNT) : baseCost;
-        const netProfit = (Number(ind.price_offered_per_ton) * qty) - transportCost;
+        const netProfit = calculateNetProfit((Number(ind.price_offered_per_ton) || 0) * qty, transportCost);
 
         return {
           ...ind,
@@ -75,7 +76,12 @@ const FarmerListResidue = () => {
           savings: isCluster ? baseCost * CLUSTER_DISCOUNT : 0,
         };
       })
-      .sort((a, b) => a.distance - b.distance);
+      .sort((a, b) => {
+        if (a.distance == null && b.distance == null) return 0;
+        if (a.distance == null) return 1;
+        if (b.distance == null) return -1;
+        return a.distance - b.distance;
+      });
   }, [industries, locationLat, locationLng, user?.location?.lat, user?.location?.lng, qty]);
 
   const handleSubmitListing = async () => {
@@ -304,41 +310,63 @@ const FarmerListResidue = () => {
               <div className="space-y-3">
                 {nearbyIndustries.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">{t('listing.noIndustries', { ns: 'farmer' })}</p>
-                ) : nearbyIndustries.map(ind => (
-                  <div key={ind.id} className="bg-muted/50 rounded-lg p-4 animate-fade-in">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-sm">{ind.company_name}</p>
-                          {ind.isCluster && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success">
-                              <Users className="w-2.5 h-2.5" /> {t('cluster.eligible', { ns: 'farmer' })}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">{ind.industry_type} • {ind.address || t('listing.unknownAddress', { ns: 'farmer' })}</p>
-                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                          <span>📍 {t('listing.distance', { ns: 'farmer', distance: ind.distance })}</span>
-                          <span>₹{Number(ind.price_offered_per_ton)}/ton</span>
-                          <span>🚚 {t('listing.transportCost', { ns: 'farmer', value: `₹${ind.transportCost.toLocaleString()}` })}</span>
-                          <span className="text-success font-medium">{t('listing.netProfit', { ns: 'farmer', value: `₹${ind.netProfit.toLocaleString()}` })}</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleSendRequest(ind)}
-                        disabled={sentRequests.includes(ind.id)}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
-                          sentRequests.includes(ind.id)
-                            ? 'bg-success/10 text-success cursor-default'
-                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                        }`}
-                      >
-                        {sentRequests.includes(ind.id) ? <><CheckCircle className="w-3 h-3" /> {t('listing.sent', { ns: 'farmer' })}</> : <><Send className="w-3 h-3" /> {t('listing.sendRequest', { ns: 'farmer' })}</>}
-                      </button>
-                    </div>
-                    <ClusterSavings isClusterEligible={ind.isCluster} originalCost={ind.originalCost} distance={ind.distance} />
+                ) : nearbyIndustries
+                    .filter(ind => Number(ind.price_offered_per_ton) > 0)
+                    .length === 0 ? (
+                  <div className="bg-warning/10 border border-warning/30 rounded-lg p-4 text-center">
+                    <p className="text-sm text-warning font-medium">{t('listing.noPricesSet', { ns: 'farmer' })}</p>
+                    <p className="text-xs text-muted-foreground mt-2">{t('listing.industriesNeedPrices', { ns: 'farmer' })}</p>
                   </div>
-                ))}
+                ) : nearbyIndustries.map(ind => {
+                  const hasPrice = Number(ind.price_offered_per_ton) > 0;
+                  return (
+                    <div key={ind.id} className={`bg-muted/50 rounded-lg p-4 animate-fade-in ${!hasPrice ? 'opacity-50 border border-warning/30' : ''}`}>
+                      {!hasPrice && (
+                        <div className="mb-3 p-2 bg-warning/10 rounded text-[11px] text-warning font-medium">
+                          ⚠️ {t('listing.noPriceWarning', { ns: 'farmer' })}
+                        </div>
+                      )}
+                      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm">{ind.company_name}</p>
+                            {ind.isCluster && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success">
+                                <Users className="w-2.5 h-2.5" /> {t('cluster.eligible', { ns: 'farmer' })}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">{ind.industry_type} • {ind.address || t('listing.unknownAddress', { ns: 'farmer' })}</p>
+                          <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                            <span>
+                              📍 {ind.distance == null
+                                ? t('listing.distanceUnavailable', { ns: 'farmer' })
+                                : t('listing.distance', { ns: 'farmer', distance: ind.distance.toFixed(1) })}
+                            </span>
+                            <span className={hasPrice ? '' : 'text-warning font-medium'}>₹{Number(ind.price_offered_per_ton) || '0'}/ton</span>
+                            <span>🚚 {t('listing.transportCost', { ns: 'farmer', value: `₹${ind.transportCost.toLocaleString()}` })}</span>
+                            <span className="text-success font-medium">{t('listing.netProfit', { ns: 'farmer', value: `₹${ind.netProfit.toLocaleString()}` })}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleSendRequest(ind)}
+                          disabled={sentRequests.includes(ind.id) || !hasPrice}
+                          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
+                            sentRequests.includes(ind.id)
+                              ? 'bg-success/10 text-success cursor-default'
+                              : !hasPrice
+                              ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                              : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                          }`}
+                          title={!hasPrice ? t('listing.cantSendNoPrice', { ns: 'farmer' }) : ''}
+                        >
+                          {sentRequests.includes(ind.id) ? <><CheckCircle className="w-3 h-3" /> {t('listing.sent', { ns: 'farmer' })}</> : <><Send className="w-3 h-3" /> {t('listing.sendRequest', { ns: 'farmer' })}</>}
+                        </button>
+                      </div>
+                      <ClusterSavings isClusterEligible={ind.isCluster} originalCost={ind.originalCost} distance={ind.distance} />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

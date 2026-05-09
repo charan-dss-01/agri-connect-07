@@ -97,32 +97,60 @@ const IndustryRequests = () => {
 
   const filtered = filter === 'all' ? transactions : transactions.filter(t => t.status === filter);
 
+  const isValidTransition = (currentStatus: string, nextStatus: 'accepted' | 'rejected' | 'completed') => {
+    if (nextStatus === 'accepted') return currentStatus === 'pending';
+    if (nextStatus === 'rejected') return currentStatus === 'pending';
+    if (nextStatus === 'completed') return currentStatus === 'accepted';
+    return false;
+  };
+
   const doAction = async () => {
     if (!confirmAction) return;
     const { id, type } = confirmAction;
+    const tx = transactions.find(t => t.id === id);
+
+    if (!tx) {
+      setConfirmAction(null);
+      return;
+    }
 
     if (type === 'accept') {
+      if (!isValidTransition(tx.status, 'accepted')) {
+        toast({ title: translate('requests.invalidTransitionTitle', { ns: 'industry', defaultValue: 'Invalid action' }), description: translate('requests.invalidTransitionDescription', { ns: 'industry', defaultValue: 'This request cannot be accepted from its current state.' }), variant: 'destructive' });
+        setConfirmAction(null);
+        return;
+      }
+
       const pickupDate = pickupDates[id] || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
       const { error } = await supabase.from('transactions').update({ status: 'accepted', pickup_date: pickupDate }).eq('id', id);
       if (!error) {
         toast({ title: translate('requests.acceptedToastTitle', { ns: 'industry' }), description: translate('requests.acceptedToastDescription', { ns: 'industry' }) });
-        const tx = transactions.find(t => t.id === id);
         if (tx) {
           await supabase.from('notifications').insert({ user_id: tx.farmer_id, message: translate('requests.acceptedNotification', { ns: 'industry', date: pickupDate }), type: 'success' });
           if (tx.listing_id) await supabase.from('residue_listings').update({ status: 'pending' }).eq('id', tx.listing_id);
         }
       }
     } else if (type === 'reject') {
+      if (!isValidTransition(tx.status, 'rejected')) {
+        toast({ title: translate('requests.invalidTransitionTitle', { ns: 'industry', defaultValue: 'Invalid action' }), description: translate('requests.invalidTransitionDescription', { ns: 'industry', defaultValue: 'This request cannot be rejected from its current state.' }), variant: 'destructive' });
+        setConfirmAction(null);
+        return;
+      }
+
       const { error } = await supabase.from('transactions').update({ status: 'rejected' }).eq('id', id);
       if (!error) {
         toast({ title: translate('requests.rejectedToastTitle', { ns: 'industry' }), variant: 'destructive' });
-        const tx = transactions.find(t => t.id === id);
         if (tx) await supabase.from('notifications').insert({ user_id: tx.farmer_id, message: translate('requests.rejectedNotification', { ns: 'industry' }), type: 'warning' });
       }
     } else {
-      const tx = transactions.find(t => t.id === id);
-      const carbonSaved = tx ? Number(tx.quantity) * 1500 : 0;
-      const creditPoints = tx ? Number(tx.quantity) * 10 : 0;
+      if (!isValidTransition(tx.status, 'completed')) {
+        toast({ title: translate('requests.invalidTransitionTitle', { ns: 'industry', defaultValue: 'Invalid action' }), description: translate('requests.invalidTransitionDescription', { ns: 'industry', defaultValue: 'Only accepted requests can be marked completed.' }), variant: 'destructive' });
+        setConfirmAction(null);
+        return;
+      }
+
+      const carbonSaved = Number(tx.quantity) * 1.5;
+      const creditPoints = Number(tx.quantity) * 8;
       const { error } = await supabase.from('transactions').update({ status: 'completed', carbon_saved: carbonSaved, credit_points: creditPoints }).eq('id', id);
       if (!error) {
         toast({ title: translate('requests.completedToastTitle', { ns: 'industry' }), description: translate('requests.completedToastDescription', { ns: 'industry' }) });

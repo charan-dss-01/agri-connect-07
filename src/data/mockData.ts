@@ -83,12 +83,44 @@ export const sampleNotifications: Notification[] = [
   { id: 'n8', userId: 'a1', message: 'New farmer registered: Suresh Yadav from Muzaffarnagar', read: true, createdAt: '2026-02-09', type: 'info' },
 ];
 
-export function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+export function hasValidCoordinates(lat?: number | null, lng?: number | null): boolean {
+  return Number.isFinite(lat) && Number.isFinite(lng);
+}
+
+export function calculateDistance(
+  lat1?: number | null,
+  lng1?: number | null,
+  lat2?: number | null,
+  lng2?: number | null,
+): number | null {
+  if (!hasValidCoordinates(lat1, lng1) || !hasValidCoordinates(lat2, lng2)) {
+    return null;
+  }
+
+  const earthRadiusKm = 6371;
+  const deltaLat = (((lat2 as number) - (lat1 as number)) * Math.PI) / 180;
+  const deltaLng = (((lng2 as number) - (lng1 as number)) * Math.PI) / 180;
+  const a = Math.sin(deltaLat / 2) ** 2
+    + Math.cos(((lat1 as number) * Math.PI) / 180)
+    * Math.cos(((lat2 as number) * Math.PI) / 180)
+    * Math.sin(deltaLng / 2) ** 2;
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export function calculateTransportCost(distanceKm: number | null, quantityTons: number, ratePerKmPerTon = TRANSPORT_RATE): number {
+  if (!Number.isFinite(distanceKm) || !Number.isFinite(quantityTons) || quantityTons <= 0) {
+    return 0;
+  }
+
+  return Math.max(0, Number(distanceKm) * quantityTons * ratePerKmPerTon);
+}
+
+export function calculateNetProfit(totalValue: number, transportCost: number): number {
+  if (!Number.isFinite(totalValue) || !Number.isFinite(transportCost)) {
+    return 0;
+  }
+
+  return Math.max(0, totalValue - transportCost);
 }
 
 // Demo mode helpers

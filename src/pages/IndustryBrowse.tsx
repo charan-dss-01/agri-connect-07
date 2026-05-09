@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Wheat, Loader2, ShoppingCart, MapPin, Package, Tag, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
-import { calculateDistance, TRANSPORT_RATE, CLUSTER_RADIUS_KM, CLUSTER_DISCOUNT } from '@/data/mockData';
+import { calculateDistance, TRANSPORT_RATE, CLUSTER_RADIUS_KM, CLUSTER_DISCOUNT, calculateTransportCost, calculateNetProfit } from '@/data/mockData';
 import { useTranslation } from 'react-i18next';
 
 const IndustryBrowse = () => {
@@ -47,17 +47,17 @@ const IndustryBrowse = () => {
       return;
     }
 
-    const dist = (industryProfile.lat && industryProfile.lng && listing.lat && listing.lng)
+    const dist = (industryProfile.lat != null && industryProfile.lng != null && listing.lat != null && listing.lng != null)
       ? calculateDistance(Number(industryProfile.lat), Number(industryProfile.lng), Number(listing.lat), Number(listing.lng))
-      : 0;
+      : null;
 
     const qty = Number(listing.quantity);
-    const baseCost = dist * TRANSPORT_RATE * qty;
-    const isCluster = dist <= CLUSTER_RADIUS_KM;
+    const baseCost = calculateTransportCost(dist, qty, TRANSPORT_RATE);
+    const isCluster = dist !== null && dist <= CLUSTER_RADIUS_KM;
     const transportCost = isCluster ? baseCost * (1 - CLUSTER_DISCOUNT) : baseCost;
     const pricePerTon = Number(industryProfile.price_offered_per_ton) || Number(listing.adjusted_price_per_ton);
     const totalValue = pricePerTon * qty;
-    const netProfit = totalValue - transportCost;
+    const netProfit = calculateNetProfit(totalValue, transportCost);
     const carbonSaved = qty * 1.5;
     const creditPoints = qty * 8;
 
@@ -128,10 +128,10 @@ const IndustryBrowse = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {availableListings.map((l, idx) => {
-              const dist = (industryProfile?.lat && industryProfile?.lng && l.lat && l.lng)
+              const dist = (industryProfile?.lat != null && industryProfile?.lng != null && l.lat != null && l.lng != null)
                 ? calculateDistance(Number(industryProfile.lat), Number(industryProfile.lng), Number(l.lat), Number(l.lng))
                 : null;
-              const isCluster = dist && dist <= CLUSTER_RADIUS_KM;
+              const isCluster = dist !== null && dist <= CLUSTER_RADIUS_KM;
               return (
                 <motion.div
                   key={l.id}
@@ -221,10 +221,10 @@ const IndustryBrowse = () => {
                           <p className="font-bold text-accent">{Number(l.moisture_level)}%</p>
                         </div>
                       )}
-                      {l.ai_confidence && (
+                      {l.ai_confidence != null && (
                         <div className="bg-card/50 rounded-lg p-2 border border-border/30">
                           <p className="text-muted-foreground mb-0.5">{t('browse.aiQuality', { ns: 'industry', defaultValue: 'AI Quality' })}</p>
-                          <p className="font-bold text-success">{(Number(l.ai_confidence) * 100).toFixed(0)}%</p>
+                          <p className="font-bold text-success">{Number(l.ai_confidence).toFixed(0)}%</p>
                         </div>
                       )}
                       {l.address && (
