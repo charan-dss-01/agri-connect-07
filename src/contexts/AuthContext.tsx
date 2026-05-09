@@ -17,6 +17,10 @@ export interface User {
   location?: { lat: number; lng: number; address: string };
 }
 
+const ADMIN_EMAIL = 'admin@agriconnect.com';
+const ADMIN_PASSWORD = '123456';
+const ADMIN_STORAGE_KEY = 'agri_admin_session';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -117,10 +121,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    const restoreAdminSession = () => {
+      const storedAdmin = localStorage.getItem(ADMIN_STORAGE_KEY);
+      if (!storedAdmin) return null;
+
+      try {
+        return JSON.parse(storedAdmin) as User;
+      } catch {
+        localStorage.removeItem(ADMIN_STORAGE_KEY);
+        return null;
+      }
+    };
+
+    const storedAdmin = restoreAdminSession();
+
     const syncSessionUser = async (nextSession: Session | null) => {
       setSession(nextSession);
 
       if (!nextSession?.user) {
+        if (storedAdmin) {
+          setUser(storedAdmin);
+          setLoading(false);
+          return;
+        }
+
         setUser(null);
         setLoading(false);
         return;
@@ -158,6 +182,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (!normalizedEmail || !normalizedPassword) {
       return { error: 'Email and password are required.' };
+    }
+
+    if (normalizedEmail === ADMIN_EMAIL && normalizedPassword === ADMIN_PASSWORD) {
+      const adminUser: User = {
+        id: 'local-admin',
+        name: 'Admin',
+        email: ADMIN_EMAIL,
+        role: 'admin',
+        approved: true,
+      };
+
+      localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(adminUser));
+      setUser(adminUser);
+      setSession(null);
+      return {};
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -248,6 +287,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem(ADMIN_STORAGE_KEY);
     setUser(null);
     setSession(null);
   };

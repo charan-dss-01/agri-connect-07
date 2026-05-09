@@ -212,6 +212,7 @@ const Login = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 className="w-full rounded-xl border border-input bg-background/80 px-4 py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder={t('form.emailPlaceholder', { ns: 'auth' })}
                 required
@@ -225,6 +226,7 @@ const Login = () => {
                   type={showPw ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete={isRegister ? 'new-password' : 'current-password'}
                   className="w-full rounded-xl border border-input bg-background/80 px-4 py-2.5 pr-10 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
                   placeholder={t('form.passwordPlaceholder', { ns: 'auth' })}
                   required

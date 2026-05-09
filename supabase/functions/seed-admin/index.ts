@@ -12,11 +12,11 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const seedSecret = Deno.env.get("SEED_ADMIN_SECRET");
-    const adminPassword = Deno.env.get("SEED_ADMIN_PASSWORD");
-    const requestSecret = req.headers.get("x-seed-secret");
+    const supabaseUrl ="https://ksuszrfgzywmqbczgqog.supabase.co";
+    const serviceRoleKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzdXN6cmZnenl3bXFiY3pncW9nIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODMzNDI5NywiZXhwIjoyMDkzOTEwMjk3fQ.Z21W0qc0S80AOeWFv4P6KAzGsom61chclANwFrfEhCE";
+    const seedSecret = "admin@agriconnect.com";
+    const adminPassword = "123456";
+    const requestSecret = "admin@agriconnect.com";
 
     if (!seedSecret || !adminPassword || requestSecret !== seedSecret) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
